@@ -1,0 +1,9 @@
+# archivos y directorios ha ignorar
+*.pyc
+env
+*.db
+*.ico
+*png
+tmp/
+*.bak
+*.exe
