@@ -181,13 +181,11 @@ def ventana_figura(image):
     ventana_fig.resizable(False, False)
 #-------------------------------------------------------------------------------------------
 def load_file():
-    
     # Reiniciar el label a un estado en blanco
     label_carga_exitosa.config(text="")
     label_base.config(text="")
     # Abrir ventana de diálogo para seleccionar el archivo
     file_path = filedialog.askopenfilename()
-
     if file_path:
         # Cerrar la ventana de información del paciente si existe
         #if ventana_info_paciente is not None:
@@ -238,7 +236,10 @@ def load_file():
                 # Actualizar el label con el mensaje de carga exitosa del archivo
                 label_carga_exitosa.config(text="Carga exitosa\n No hay datos de imagen")
                 label_carga_exitosa.configure(foreground='red')
+
 def terminar_bucle():
+    '''Termina la ventana principal
+    '''
     root.quit()
 # Crear la ventana de la interfaz gráfica
 root = tk.Tk()
@@ -251,6 +252,7 @@ button.place(x=50, y=250)
 # Agregar botón de terminar
 btn_terminar = tk.Button(root, text="Terminar", command=terminar_bucle)
 btn_terminar.place(x=200, y=250)
+
 if getattr(sys, 'frozen', False):
     # Si se está ejecutando desde un ejecutable generado por PyInstaller
     imagen_path = sys._MEIPASS + "./imagen.png"
