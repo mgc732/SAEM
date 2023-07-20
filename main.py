@@ -13,14 +13,19 @@ from voxel import Voxel
 from metabolito import Metabolito
 
 import tkinter as tk
-from tkinter import filedialog
-from tkinter import ttk
+from tkinter import filedialog # crear ventanas de diálogo para que los usuarios abran o guarden archivos, 
+                               #seleccionen carpetas y realicen otras operaciones relacionadas con el 
+                               # sistema de archivos
+from tkinter import ttk # mejora estética 
 import matplotlib.pyplot as plt
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from PIL import Image, ImageTk
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg # permite mostrar los gráficos generados por 
+                                                                # matplotlib dentro de una ventana o marco de 
+                                                                # tkinter
+from PIL import Image, ImageTk # La biblioteca Pillow proporciona un conjunto de herramientas poderosas para 
+                               # trabajar con imágenes en Python, permitiendo abrir, manipular, guardar y mostrar 
+                               # imágenes en diferentes formatos
 import pydicom
 import numpy as np
-
 import re
 import sys
 
@@ -32,10 +37,27 @@ ventana_matriz = None
 
 #--------------------------------------------------------------
 def guardar_bd(cabecera, matriz_region, imagen_recortada):
-    
+    """ Guarda información en una base de datos utilizando SQLAlchemy.
+    Parámetros:
+        cabecera (dict): Un diccionario que contiene información de la cabecera, incluyendo:
+            - 'id' (int): ID del paciente.
+            - 'nombre' (str): Nombre del paciente.
+            - 'apellido' (str): Apellido del paciente.
+            - 'edad' (int): Edad del paciente.
+            - 'genero' (str): Género del paciente.
+            - 'imagen' (str): Nombre de la imagen.
+            - 'fecha' (str): Fecha de la imagen.
+            - 'metabolito' (str): Nombre del metabolito.
+
+        matriz_region (list): Una matriz (lista de listas) que representa la región del cerebro.
+        imagen_recortada (list): Una matriz (lista de listas) que representa la imagen recortada.
+    Notas:
+        - La función utiliza SQLAlchemy para interactuar con la base de datos.
+        - Verifica si el objeto paciente ya existe en la base de datos y lo agrega si no existe.
+        - Agrega la imagen y la información del metabolito en la base de datos.
+        - Actualiza el estado del widget label_base según el resultado de la operación.
+    """
     matriz_region = np.array(matriz_region)
-  
-    
     if np.any(matriz_region != 0):
         #Crea la BD
         Base.metadata.create_all(engine)
@@ -123,9 +145,26 @@ def guardar_bd(cabecera, matriz_region, imagen_recortada):
 
     
 def guardar_texto(filas, columnas, cabecera, imagen_recortada):
-    
+    """ Guarda información en una matriz de regiones y llama a la función 'guardar_bd' para guardarla en una base de datos.
+    Parámetros:
+        filas (int): Número de filas en la matriz de regiones.
+        columnas (int): Número de columnas en la matriz de regiones.
+        cabecera (dict): Un diccionario que contiene información de la cabecera, incluyendo:
+            - 'id' (int): ID del paciente.
+            - 'nombre' (str): Nombre del paciente.
+            - 'apellido' (str): Apellido del paciente.
+            - 'edad' (int): Edad del paciente.
+            - 'genero' (str): Género del paciente.
+            - 'imagen' (str): Nombre de la imagen.
+            - 'fecha' (str): Fecha de la imagen.
+            - 'metabolito' (str): Nombre del metabolito.
+        imagen_recortada (list): Una matriz (lista de listas) que representa la imagen recortada.
+    Notas:
+        - La función crea una matriz de regiones y la llena según los valores proporcionados en 'matriz_entries'.
+        - Llama a la función 'guardar_bd' para guardar la información en una base de datos.
+        - Cierra las ventanas 'ventana_matriz' y 'ventana_fig' al guardar la información.
+    """
     matriz_region = [[0]*columnas for i in range(filas)]
-    
     for i in range(filas):
         for j in range(columnas):
             if not matriz_entries[i][j].get()=='':
@@ -145,16 +184,37 @@ def guardar_texto(filas, columnas, cabecera, imagen_recortada):
     guardar_bd(cabecera, matriz_region, imagen_recortada)
 
 def crear_ventana_matriz(filas, columnas, cabecera, imagen_recortada):
+    """ Crea una ventana emergente para ingresar las regiones de la matriz.
+    Parámetros:
+        filas (int): Número de filas en la matriz de regiones.
+        columnas (int): Número de columnas en la matriz de regiones.
+        cabecera (dict): Un diccionario que contiene información de la cabecera, incluyendo:
+            - 'id' (int): ID del paciente.
+            - 'nombre' (str): Nombre del paciente.
+            - 'apellido' (str): Apellido del paciente.
+            - 'edad' (int): Edad del paciente.
+            - 'genero' (str): Género del paciente.
+            - 'imagen' (str): Nombre de la imagen.
+            - 'fecha' (str): Fecha de la imagen.
+            - 'metabolito' (str): Nombre del metabolito.
+        imagen_recortada (list): Una matriz (lista de listas) que representa la imagen recortada.
+    Notas:
+        - La función crea una ventana emergente (Toplevel) para ingresar las regiones en una matriz.
+        - Cada celda de la matriz contiene un Combobox con opciones para seleccionar la región.
+        - Se utiliza la variable global 'ventana_matriz' para mantener una referencia a la ventana emergente.
+        - Se utiliza la variable global 'matriz_entries' para mantener una referencia a los Combobox creados.
+        - Al hacer clic en el botón 'Guardar', llama a la función 'guardar_texto' para guardar la información 
+          en una base de datos.
+    """
     global ventana_matriz
     global matriz_entries
     ventana_matriz = tk.Toplevel(root)
     ventana_matriz.title("Ingresar Regiones")
     matriz_entries = []
-    opciones = ['','Parietal', 'Frontal', 'Occipital', 'Temporal', 'Nucleo']  # Lista de opciones para el Combobox
+    opciones = ['','Parietal', 'Frontal', 'Occipital', 'Temporal', 'Núcleo']  # Lista de opciones para el Combobox
     for i in range(filas):
         fila_entries = []
         for j in range(columnas):
-            
             # Crear el Combobox en la primera celda
             combo = ttk.Combobox(ventana_matriz, values=opciones)
             combo.current(0)  # Seleccionar la primera opción por defecto
@@ -162,12 +222,20 @@ def crear_ventana_matriz(filas, columnas, cabecera, imagen_recortada):
             fila_entries.append(combo)
 
         matriz_entries.append(fila_entries)
-    btn_guardar = tk.Button(ventana_matriz, text="Guardar", command=lambda: guardar_texto(filas, columnas, cabecera, imagen_recortada))
+    btn_guardar = ttk.Button(ventana_matriz, text="Guardar", command=lambda: guardar_texto(filas, columnas, cabecera, imagen_recortada))
     btn_guardar.grid(row=filas, columnspan=columnas)
-
-    
+  
 def ventana_figura(image):
-   
+    """ Crea una ventana emergente que muestra una imagen utilizando Matplotlib y Tkinter.
+    Parámetros:
+        image (numpy.ndarray): La imagen a mostrar. Debe ser un arreglo de NumPy.
+    Notas:
+        - La función crea una ventana emergente (Toplevel) para mostrar la imagen.
+        - Utiliza Matplotlib para crear y mostrar la imagen dentro de la ventana emergente.
+        - Se utiliza la variable global 'ventana_fig' para mantener una referencia a la ventana emergente.
+        - La imagen se muestra en escala de grises (cmap=plt.cm.gray) y sin ejes (plt.axis('off')).
+        - La ventana emergente no es redimensionable.
+    """
     global ventana_fig
     ventana_fig = tk.Toplevel(root)
     ventana_fig.title("Imagen")
@@ -181,6 +249,17 @@ def ventana_figura(image):
     ventana_fig.resizable(False, False)
 #-------------------------------------------------------------------------------------------
 def load_file():
+    """ Carga un archivo DICOM, accede a los metadatos y datos del archivo, y muestra la imagen en una ventana
+        emergente.
+    Notas:
+        - La función abre una ventana de diálogo para que el usuario seleccione un archivo DICOM.
+        - Accede a los metadatos y datos del archivo DICOM utilizando PyDICOM.
+        - Muestra la imagen en una ventana emergente utilizando la función 'ventana_figura'.
+        - Si la imagen contiene datos válidos, se recorta la matriz de la imagen y se crea una ventana emergente 
+          para ingresar texto (matriz de regiones).
+        - Actualiza el estado de los widgets 'label_carga_exitosa' y 'label_base' según el resultado de la carga 
+          del archivo.
+    """
     # Reiniciar el label a un estado en blanco
     label_carga_exitosa.config(text="")
     label_base.config(text="")
@@ -241,16 +320,17 @@ def terminar_bucle():
     '''Termina la ventana principal
     '''
     root.quit()
+#---------------------------------------------------------------------------------------------
 # Crear la ventana de la interfaz gráfica
 root = tk.Tk()
 root.geometry('300x330')
 root.title('SPEAM')
 #root.iconbitmap('./icon.ico')
 # Crear el botón para cargar el archivo
-button = tk.Button(root, text="Cargar archivo", command=load_file)
+button = ttk.Button(root, text="Cargar archivo", command=load_file)
 button.place(x=50, y=250)
 # Agregar botón de terminar
-btn_terminar = tk.Button(root, text="Terminar", command=terminar_bucle)
+btn_terminar = ttk.Button(root, text="Terminar", command=terminar_bucle)
 btn_terminar.place(x=200, y=250)
 
 if getattr(sys, 'frozen', False):
@@ -264,13 +344,13 @@ image = Image.open(imagen_path)
 imagen_tk = ImageTk.PhotoImage(image)
 
 # Crear un widget Label y mostrar la imagen
-label_imagen = tk.Label(root, image=imagen_tk)
+label_imagen = ttk.Label(root, image=imagen_tk)
 label_imagen.place(x=37.5, y=10)
 
 # Crear el label para mostrar el mensaje de carga exitosa del archivo
-label_carga_exitosa = tk.Label(root, text="")
+label_carga_exitosa = ttk.Label(root, text="")
 label_carga_exitosa.place(x=50, y=280)
-label_base = tk.Label(root, text="")
+label_base = ttk.Label(root, text="")
 label_base.place(x=50, y=300)
 
 root.resizable(False, False)
