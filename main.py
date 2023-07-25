@@ -57,6 +57,7 @@ def guardar_bd(cabecera, matriz_region, imagen_recortada):
         - Agrega la imagen y la información del metabolito en la base de datos.
         - Actualiza el estado del widget label_base según el resultado de la operación.
     """
+    cabecera['edad'] = 17
     matriz_region = np.array(matriz_region)
     if np.any(matriz_region != 0) and cabecera['edad']>=18:
         #Crea la BD
@@ -139,11 +140,12 @@ def guardar_bd(cabecera, matriz_region, imagen_recortada):
                 label_base.configure(foreground='red')
         session.close()
     else:
-        if np.any(matriz_region == 0):
+        if np.all(matriz_region == 0):
+            print(matriz_region, np.all(matriz_region == 0))
             label_base.config(text="Cargar matriz regiones")
             label_base.configure(foreground='red')
         else: 
-            label_base.config(text="Menor de edad")
+            label_base.config(text="Restricción de edad =>Registro No agregado")
             label_base.configure(foreground='red')
 
    
@@ -308,7 +310,7 @@ def load_file():
                 columnas = np.shape(image_recortada)[1]
 
                 # Actualizar el label con el mensaje de carga exitosa del archivo
-                label_carga_exitosa.config(text="Carga exitosa del archivo")
+                label_carga_exitosa.config(text="Lectura exitosa del archivo")
                 label_carga_exitosa.configure(foreground='green')
                 # Crear la ventana de la matriz para ingresar texto
                 crear_ventana_matriz(filas, columnas, cabecera, image_recortada)
@@ -316,7 +318,7 @@ def load_file():
                 
             else:
                 # Actualizar el label con el mensaje de carga exitosa del archivo
-                label_carga_exitosa.config(text="Carga exitosa\n No hay datos de imagen")
+                label_carga_exitosa.config(text="Lectura exitosa del archivo\n No hay datos de imagen")
                 label_carga_exitosa.configure(foreground='red')
 
 def terminar_bucle():
