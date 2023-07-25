@@ -58,7 +58,7 @@ def guardar_bd(cabecera, matriz_region, imagen_recortada):
         - Actualiza el estado del widget label_base según el resultado de la operación.
     """
     matriz_region = np.array(matriz_region)
-    if np.any(matriz_region != 0):
+    if np.any(matriz_region != 0) and cabecera['edad']>=18:
         #Crea la BD
         Base.metadata.create_all(engine)
         #Abre la sesión
@@ -139,11 +139,14 @@ def guardar_bd(cabecera, matriz_region, imagen_recortada):
                 label_base.configure(foreground='red')
         session.close()
     else:
-        label_base.config(text="Cargar matriz regiones")
-        label_base.configure(foreground='red')
-       
+        if np.any(matriz_region == 0):
+            label_base.config(text="Cargar matriz regiones")
+            label_base.configure(foreground='red')
+        else: 
+            label_base.config(text="Menor de edad")
+            label_base.configure(foreground='red')
 
-    
+   
 def guardar_texto(filas, columnas, cabecera, imagen_recortada):
     """ Guarda información en una matriz de regiones y llama a la función 'guardar_bd' para guardarla en una base de datos.
     Parámetros:
