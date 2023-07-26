@@ -66,7 +66,7 @@ def guardar_bd(cabecera, matriz_region, imagen_recortada):
         session = Session()
         #Regiones 
         regiones = []
-        regiones.append(Region(id=1, nombre='pariental'))
+        regiones.append(Region(id=1, nombre='parietal'))
         regiones.append(Region(id=2, nombre='frontal'))
         regiones.append(Region(id=3, nombre='occipital'))
         regiones.append(Region(id=4, nombre='temporal'))
@@ -183,7 +183,7 @@ def guardar_texto(filas, columnas, cabecera, imagen_recortada):
                     matriz_region[i][j] = 4
                 else:
                     matriz_region[i][j] = 5
-            
+         
     ventana_matriz.destroy()  # Cerrar la ventana de la matriz al guardar
     ventana_fig.destroy()
     guardar_bd(cabecera, matriz_region, imagen_recortada)
@@ -216,7 +216,7 @@ def crear_ventana_matriz(filas, columnas, cabecera, imagen_recortada):
     ventana_matriz = tk.Toplevel(root)
     ventana_matriz.title("Ingresar Regiones")
     matriz_entries = []
-    opciones = ['','Parietal', 'Frontal', 'Occipital', 'Temporal', 'Núcleo']  # Lista de opciones para el Combobox
+    opciones = ['','Parietal', 'Frontal', 'Occipital', 'Temporal', 'Nucleo']  # Lista de opciones para el Combobox
     for i in range(filas):
         fila_entries = []
         for j in range(columnas):
@@ -318,7 +318,7 @@ def load_file():
                 
             else:
                 # Actualizar el label con el mensaje de carga exitosa del archivo
-                label_carga_exitosa.config(text="Lectura exitosa del archivo\n No hay datos de imagen")
+                label_carga_exitosa.config(text="Lectura exitosa del archivo\nNo hay datos de imagen")
                 label_carga_exitosa.configure(foreground='red')
 
 def terminar_bucle():
