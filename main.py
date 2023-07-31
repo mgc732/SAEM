@@ -57,7 +57,7 @@ def guardar_bd(cabecera, matriz_region, imagen_recortada):
         - Agrega la imagen y la información del metabolito en la base de datos.
         - Actualiza el estado del widget label_base según el resultado de la operación.
     """
-    cabecera['edad'] = 17
+    
     matriz_region = np.array(matriz_region)
     if np.any(matriz_region != 0) and cabecera['edad']>=18:
         #Crea la BD
@@ -66,7 +66,7 @@ def guardar_bd(cabecera, matriz_region, imagen_recortada):
         session = Session()
         #Regiones 
         regiones = []
-        regiones.append(Region(id=1, nombre='pariental'))
+        regiones.append(Region(id=1, nombre='parietal'))
         regiones.append(Region(id=2, nombre='frontal'))
         regiones.append(Region(id=3, nombre='occipital'))
         regiones.append(Region(id=4, nombre='temporal'))
@@ -141,14 +141,13 @@ def guardar_bd(cabecera, matriz_region, imagen_recortada):
         session.close()
     else:
         if np.all(matriz_region == 0):
-            print(matriz_region, np.all(matriz_region == 0))
+            
             label_base.config(text="Cargar matriz regiones")
             label_base.configure(foreground='red')
         else: 
             label_base.config(text="Restricción de edad =>Registro No agregado")
             label_base.configure(foreground='red')
 
-   
 def guardar_texto(filas, columnas, cabecera, imagen_recortada):
     """ Guarda información en una matriz de regiones y llama a la función 'guardar_bd' para guardarla en una base de datos.
     Parámetros:
@@ -173,13 +172,13 @@ def guardar_texto(filas, columnas, cabecera, imagen_recortada):
     for i in range(filas):
         for j in range(columnas):
             if not matriz_entries[i][j].get()=='':
-                if matriz_entries[i][j].get() == 'Parietal':
+                if matriz_entries[i][j].get() == 'parietal':
                     matriz_region[i][j] = 1
-                elif matriz_entries[i][j].get() == 'Frontal':
+                elif matriz_entries[i][j].get() == 'frontal':
                     matriz_region[i][j] = 2
-                elif matriz_entries[i][j].get() == 'Occipital':
+                elif matriz_entries[i][j].get() == 'occipital':
                     matriz_region[i][j] = 3
-                elif matriz_entries[i][j].get() == 'Temporal':
+                elif matriz_entries[i][j].get() == 'temporal':
                     matriz_region[i][j] = 4
                 else:
                     matriz_region[i][j] = 5
@@ -187,6 +186,28 @@ def guardar_texto(filas, columnas, cabecera, imagen_recortada):
     ventana_matriz.destroy()  # Cerrar la ventana de la matriz al guardar
     ventana_fig.destroy()
     guardar_bd(cabecera, matriz_region, imagen_recortada)
+
+def get_color_by_value(value, vmin, vmax, colormap='viridis'):
+    """
+    Obtener el color correspondiente a un valor dentro de un rango específico utilizando una paleta de colores.
+
+    Parámetros:
+    value (float): El valor para el cual se obtendrá el color.
+    vmin (float): Valor mínimo del rango.
+    vmax (float): Valor máximo del rango.
+    colormap (str): Nombre de la paleta de colores a utilizar. El valor predeterminado es 'viridis'.
+
+    Retorna:
+    str: El código hexadecimal de color en formato '#rrggbb'.
+    """
+    norm_value = (value - vmin) / (vmax - vmin)
+    cmap = plt.get_cmap(colormap)
+    rgba = cmap(norm_value)
+    #rgba = get_rgba(norm_value)
+    r = int(rgba[0] * 255)
+    g = int(rgba[1] * 255)
+    b = int(rgba[2] * 255)
+    return f'#{r:02x}{g:02x}{b:02x}'
 
 def crear_ventana_matriz(filas, columnas, cabecera, imagen_recortada):
     """ Crea una ventana emergente para ingresar las regiones de la matriz.
@@ -213,22 +234,43 @@ def crear_ventana_matriz(filas, columnas, cabecera, imagen_recortada):
     """
     global ventana_matriz
     global matriz_entries
+   
     ventana_matriz = tk.Toplevel(root)
-    ventana_matriz.title("Ingresar Regiones")
+    ventana_matriz.title("Regiones")
     matriz_entries = []
-    opciones = ['','Parietal', 'Frontal', 'Occipital', 'Temporal', 'Núcleo']  # Lista de opciones para el Combobox
-    for i in range(filas):
+    opciones = ['','parietal', 'frontal', 'occipital', 'temporal', 'nucleo']  # Lista de opciones para el Combobox
+    for i in range(0,filas*2,2):
         fila_entries = []
         for j in range(columnas):
             # Crear el Combobox en la primera celda
-            combo = ttk.Combobox(ventana_matriz, values=opciones)
+            combo = ttk.Combobox(ventana_matriz,
+                                 state="readonly",
+                                 values=opciones,
+                                 width=8, 
+                                 )
             combo.current(0)  # Seleccionar la primera opción por defecto
-            combo.grid(row=i, column=j)
+            combo.grid(row=i, column=j, padx=2)
             fila_entries.append(combo)
-
+            
         matriz_entries.append(fila_entries)
+        #ventana_matriz.rowconfigure(i, minsize=30)
+    ind=0
+    for i in range(1,filas*2+1,2):
+        #ventana_matriz.rowconfigure(i, minsize=30)
+        for j in range(columnas):
+            canvas = tk.Canvas(ventana_matriz,
+                               width=70,
+                               height=60, 
+                               highlightthickness=0, 
+                               bg=get_color_by_value(imagen_recortada[ind][j], 
+                               np.min(imagen_recortada),
+                               np.max(imagen_recortada), colormap='viridis'))
+            canvas.grid(row=i, column=j, padx=2, pady=2)
+        ind+=1        
+    
     btn_guardar = ttk.Button(ventana_matriz, text="Guardar", command=lambda: guardar_texto(filas, columnas, cabecera, imagen_recortada))
-    btn_guardar.grid(row=filas, columnspan=columnas)
+    btn_guardar.grid(row=filas*2+2, columnspan=columnas)
+    ventana_matriz.resizable(False, False)
   
 def ventana_figura(image):
     """ Crea una ventana emergente que muestra una imagen utilizando Matplotlib y Tkinter.
@@ -246,9 +288,13 @@ def ventana_figura(image):
     ventana_fig.title("Imagen")
     # Mostrar la imagen recortada en la ventana de la matriz
     fig = plt.figure(figsize=(4, 4))
-    plt.imshow(image, cmap=plt.cm.gray)
-    plt.axis('off')
-    plt.title('Imagen DICOM recortada')
+    ax1 = fig.add_subplot(111)
+    pos = ax1.imshow(image)
+    ax1.axis('off')
+    ax1.set_title('Imagen DICOM recortada')
+    # Agregar el colorbar a la figura
+    fig.colorbar(pos, ax=ax1)
+   
     canvas = FigureCanvasTkAgg(fig, master=ventana_fig)
     canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True)
     ventana_fig.resizable(False, False)
@@ -265,6 +311,9 @@ def load_file():
         - Actualiza el estado de los widgets 'label_carga_exitosa' y 'label_base' según el resultado de la carga 
           del archivo.
     """
+    if ventana_matriz!= None:
+        ventana_matriz.destroy()
+        ventana_fig.destroy()
     # Reiniciar el label a un estado en blanco
     label_carga_exitosa.config(text="")
     label_base.config(text="")
@@ -292,7 +341,7 @@ def load_file():
             'nombre': dataset.PatientName.given_name,
             'apellido': dataset.PatientName.family_name,
             'genero': dataset.PatientSex,
-            'edad': re.sub('^0+', '', re.sub('[^\d]', '', dataset.PatientAge)),
+            'edad': int(re.sub('^0+', '', re.sub('[^\d]', '', dataset.PatientAge))),
             'fecha': fecha,
             'metabolito': metabolito,
             'imagen' :  re.search(r"DICOM/PA\d/.+/IM\d", file_path).group()
@@ -310,7 +359,7 @@ def load_file():
                 columnas = np.shape(image_recortada)[1]
 
                 # Actualizar el label con el mensaje de carga exitosa del archivo
-                label_carga_exitosa.config(text="Lectura exitosa del archivo")
+                label_carga_exitosa.configure(text="Lectura exitosa del archivo")
                 label_carga_exitosa.configure(foreground='green')
                 # Crear la ventana de la matriz para ingresar texto
                 crear_ventana_matriz(filas, columnas, cabecera, image_recortada)
@@ -318,7 +367,7 @@ def load_file():
                 
             else:
                 # Actualizar el label con el mensaje de carga exitosa del archivo
-                label_carga_exitosa.config(text="Lectura exitosa del archivo\n No hay datos de imagen")
+                label_carga_exitosa.configure(text="Lectura exitosa del archivo\nNo hay datos de imagen")
                 label_carga_exitosa.configure(foreground='red')
 
 def terminar_bucle():

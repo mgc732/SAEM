@@ -1,6 +1,7 @@
 # archivos y directorios ha ignorar
 *.pyc
 env
+pruebas
 *.db
 *.ico
 *png
