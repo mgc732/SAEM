@@ -5,6 +5,7 @@ Created on Tue Jul 11 10:42:10 2023
 @author: Max
 """
 
+from sqlalchemy import func
 from declarative_base import Session, engine, Base
 from region import Region
 from imagen import Imagen
@@ -74,7 +75,6 @@ def guardar_bd(cabecera, matriz_region, imagen_recortada):
         
         for region in regiones:
             existing_objeto = session.get(Region, region.id)
-            
             # Verificar si el objeto existe en la base de datos
             if existing_objeto:
                 # El objeto ya existe en la base de datos, no es necesario volver a escribirlo
@@ -96,7 +96,6 @@ def guardar_bd(cabecera, matriz_region, imagen_recortada):
             imagen = Imagen(nombre=cabecera['imagen'], fecha =cabecera['fecha'], paciente=paciente)
             session.add(imagen)
             paciente.imagenes.append(imagen)
-            
             for i in range(len(matriz_region)):
                 for j in range(len(matriz_region[0])):
                     if matriz_region[i][j]!=0:
@@ -118,7 +117,6 @@ def guardar_bd(cabecera, matriz_region, imagen_recortada):
             imagen = Imagen(nombre=cabecera['imagen'], fecha =cabecera['fecha'], paciente=paciente)
             session.add(imagen)
             paciente.imagenes.append(imagen)
-            
             for i in range(len(matriz_region)):
                 for j in range(len(matriz_region[0])):
                     if matriz_region[i][j]!=0:
@@ -141,7 +139,6 @@ def guardar_bd(cabecera, matriz_region, imagen_recortada):
         session.close()
     else:
         if np.all(matriz_region == 0):
-            
             label_base.config(text="Cargar matriz regiones")
             label_base.configure(foreground='red')
         else: 
@@ -187,23 +184,21 @@ def guardar_texto(filas, columnas, cabecera, imagen_recortada):
     ventana_fig.destroy()
     guardar_bd(cabecera, matriz_region, imagen_recortada)
 
-def get_color_by_value(value, vmin, vmax, colormap='viridis'):
+def get_color_por_valor(valor, vmin, vmax, colormap='viridis'):
     """
     Obtener el color correspondiente a un valor dentro de un rango específico utilizando una paleta de colores.
-
     Parámetros:
-    value (float): El valor para el cual se obtendrá el color.
+    valor (float): El valor para el cual se obtendrá el color.
     vmin (float): Valor mínimo del rango.
     vmax (float): Valor máximo del rango.
     colormap (str): Nombre de la paleta de colores a utilizar. El valor predeterminado es 'viridis'.
-
     Retorna:
     str: El código hexadecimal de color en formato '#rrggbb'.
     """
-    norm_value = (value - vmin) / (vmax - vmin)
+    norm_valor = (valor - vmin) / (vmax - vmin)
     cmap = plt.get_cmap(colormap)
-    rgba = cmap(norm_value)
-    #rgba = get_rgba(norm_value)
+    rgba = cmap(norm_valor)
+    #rgba = get_rgba(norm_valor)
     r = int(rgba[0] * 255)
     g = int(rgba[1] * 255)
     b = int(rgba[2] * 255)
@@ -262,7 +257,7 @@ def crear_ventana_matriz(filas, columnas, cabecera, imagen_recortada):
                                width=70,
                                height=60, 
                                highlightthickness=0, 
-                               bg=get_color_by_value(imagen_recortada[ind][j], 
+                               bg=get_color_por_valor(imagen_recortada[ind][j], 
                                np.min(imagen_recortada),
                                np.max(imagen_recortada), colormap='viridis'))
             canvas.grid(row=i, column=j, padx=2, pady=2)
@@ -369,6 +364,54 @@ def load_file():
                 # Actualizar el label con el mensaje de carga exitosa del archivo
                 label_carga_exitosa.configure(text="Lectura exitosa del archivo\nNo hay datos de imagen")
                 label_carga_exitosa.configure(foreground='red')
+def procesamiento(nombre):
+    
+    # Crear una sesión
+    session = Session()
+    if nombre!='':
+   # Realizar la consulta y calcular los promedios de concentración
+        results = session.query(Metabolito.nombre, func.round(func.avg(Metabolito.concentracion), 2).label('promedio_concentracion'))\
+                        .join(Voxel, Metabolito.voxel_id == Voxel.id)\
+                        .join(Region, Voxel.region_id == Region.id)\
+                        .filter(Region.nombre == nombre)\
+                        .group_by(Metabolito.nombre)\
+                        .all()
+
+        # Calcular las proporciones de Naa/Cre y Cho/Cre
+        ratios = {}
+        for nombre, promedio_concentracion in results:
+            ratios[nombre] = promedio_concentracion
+
+        # Calcular las proporciones de Naa/Cre y Cho/Cre
+        naa_cre_ratio = ratios['N-Acetyl'] / ratios['Creatine']  # División evitando división por cero
+        cho_cre_ratio = ratios['Choline'] / ratios['Creatine']  # División evitando división por cero
+        session.close()
+    else:
+        naa_cre_ratio, cho_cre_ratio = 0,0
+       # Crear etiquetas para mostrar las proporciones
+    tk.Label(new_window, text=f"Proporción de Naa/Cre: {naa_cre_ratio:.2f}").grid(row=1, column=0, padx=2)
+    tk.Label(new_window, text=f"Proporción de Cho/Cre: {cho_cre_ratio:.2f}").grid(row=2, column=0, padx=2)
+
+
+def mostrar_proporcion():
+    # Crear una nueva ventana
+    global new_window
+    new_window = tk.Toplevel(root)
+    new_window.title("Proporciones")
+    opciones = ['','parietal', 'frontal', 'occipital', 'temporal', 'nucleo']  # Lista de opciones para el Combobox
+    combo = ttk.Combobox(new_window,
+                                 state="readonly",
+                                 values=opciones,
+                                 width=8, 
+                                 )
+    #combo.current(0)  # Seleccionar la primera opción por defecto
+    combo.grid(row=0, column=0, padx=2)
+    nombre = combo.get()
+    # Obtener las proporciones
+    
+    btn_calcular = ttk.Button(new_window, text='Calcular', command=lambda:procesamiento(nombre))
+    btn_calcular.grid(row=4, column=0)
+ 
 
 def terminar_bucle():
     '''Termina la ventana principal
@@ -379,10 +422,14 @@ def terminar_bucle():
 root = tk.Tk()
 root.geometry('300x330')
 root.title('SPEAM')
+
 #root.iconbitmap('./icon.ico')
 # Crear el botón para cargar el archivo
 button = ttk.Button(root, text="Cargar archivo", command=load_file)
-button.place(x=50, y=250)
+button.place(x=25, y=250)
+# Boton para consultar valor
+btn_consultar = ttk.Button(root, text='Procesar', command=mostrar_proporcion)
+btn_consultar.place(x=118, y=250)
 # Agregar botón de terminar
 btn_terminar = ttk.Button(root, text="Terminar", command=terminar_bucle)
 btn_terminar.place(x=200, y=250)
@@ -403,9 +450,9 @@ label_imagen.place(x=37.5, y=10)
 
 # Crear el label para mostrar el mensaje de carga exitosa del archivo
 label_carga_exitosa = ttk.Label(root, text="")
-label_carga_exitosa.place(x=50, y=280)
+label_carga_exitosa.place(x=25, y=280)
 label_base = ttk.Label(root, text="")
-label_base.place(x=50, y=300)
+label_base.place(x=25, y=300)
 
 root.resizable(False, False)
 # Ejecutar el bucle principal de la interfaz gráfica
