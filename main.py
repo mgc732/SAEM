@@ -144,7 +144,7 @@ def guardar_bd(cabecera, matriz_region, imagen_recortada):
             msg.showerror('Base de datos', 'Matriz de regiones vacía') 
 
         else:
-            msg.showerror('Base de datos', 'Restricción de edad\nEl pacientes es menor de edad')  
+            msg.showerror('Base de datos', 'Restricción de edad\nEl paciente es menor de edad')  
 
 
 def guardar_texto(filas, columnas, cabecera, imagen_recortada):
