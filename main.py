@@ -14,12 +14,7 @@ from modulos.voxel import Voxel
 from modulos.metabolito import Metabolito
 
 import tkinter as tk
-from tkinter import filedialog # crear ventanas de diálogo para que los usuarios abran o guarden archivos, 
-                               #seleccionen carpetas y realicen otras operaciones relacionadas con el 
-                               # sistema de archivos
-from tkinter import ttk # mejora estética 
-from tkinter import Menu
-from tkinter import messagebox as msg 
+from tkinter import filedialog, ttk, Menu, messagebox as msg 
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg # permite mostrar los gráficos generados por 
                                                                 # matplotlib dentro de una ventana o marco de 
@@ -60,7 +55,6 @@ def guardar_bd(cabecera, matriz_region, imagen_recortada):
         - Agrega la imagen y la información del metabolito en la base de datos.
         - Actualiza el estado del widget label_base según el resultado de la operación.
     """
-    
     matriz_region = np.array(matriz_region)
     if np.any(matriz_region != 0) and cabecera['edad']>=18:
         #Crea la BD
@@ -146,8 +140,7 @@ def guardar_bd(cabecera, matriz_region, imagen_recortada):
         else:
             msg.showerror('Base de datos', 'Restricción de edad\nEl paciente es menor de edad')  
 
-
-def guardar_texto(filas, columnas, cabecera, imagen_recortada):
+def guardar_region(filas, columnas, cabecera, imagen_recortada):
     """ Guarda información en una matriz de regiones y llama a la función 'guardar_bd' para guardarla en una base de datos.
     Parámetros:
         filas (int): Número de filas en la matriz de regiones.
@@ -226,7 +219,7 @@ def crear_ventana_matriz(filas, columnas, cabecera, imagen_recortada):
         - Cada celda de la matriz contiene un Combobox con opciones para seleccionar la región.
         - Se utiliza la variable global 'ventana_matriz' para mantener una referencia a la ventana emergente.
         - Se utiliza la variable global 'matriz_entries' para mantener una referencia a los Combobox creados.
-        - Al hacer clic en el botón 'Guardar', llama a la función 'guardar_texto' para guardar la información 
+        - Al hacer clic en el botón 'Guardar', llama a la función 'guardar_region' para guardar la información 
           en una base de datos.
     """
     global ventana_matriz
@@ -265,7 +258,7 @@ def crear_ventana_matriz(filas, columnas, cabecera, imagen_recortada):
             canvas.grid(row=i, column=j, padx=2, pady=2)
         ind+=1        
     
-    btn_guardar = ttk.Button(ventana_matriz, text="Guardar", command=lambda: guardar_texto(filas, columnas, cabecera, imagen_recortada))
+    btn_guardar = ttk.Button(ventana_matriz, text="Guardar", command=lambda: guardar_region(filas, columnas, cabecera, imagen_recortada))
     btn_guardar.grid(row=filas*2+2, columnspan=columnas, pady=10)
     ventana_matriz.resizable(False, False)
   
@@ -296,7 +289,7 @@ def ventana_figura(image):
     canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True)
     ventana_fig.resizable(False, False)
 #-------------------------------------------------------------------------------------------
-def load_file():
+def cargar_archivo():
     """ Carga un archivo DICOM, accede a los metadatos y datos del archivo, y muestra la imagen en una ventana
         emergente.
     Notas:
@@ -362,7 +355,7 @@ def load_file():
                 # Actualizar el label con el mensaje de carga exitosa del archivo
                 msg.showinfo('Lectura exitosa del archivo DICOM', '      No hay datos de imagen      ')
 
-def procesamiento(region_seleccionda):
+def procesamiento_bd(region_seleccionda):
     
     
     # Crear una sesión
@@ -410,7 +403,7 @@ def procesamiento(region_seleccionda):
              font=f'Helvetica {letra} bold').grid(row=7, column=2, sticky='W')
 
 
-def mostrar_proporcion():
+def mostrar_metabolitos():
     # Crear una nueva ventana
     global ventana_procesamiento
     global frame_region
@@ -432,7 +425,7 @@ def mostrar_proporcion():
     combo.grid(row=0, column=1, padx=2)
       
     # Evento selector => llamada a procesamiento
-    combo.bind("<<ComboboxSelected>>", lambda _:procesamiento(combo.get()))
+    combo.bind("<<ComboboxSelected>>", lambda _:procesamiento_bd(combo.get()))
 
 
 def terminar_root():
@@ -440,7 +433,10 @@ def terminar_root():
     '''
     root.quit()
     root.destroy()
-    
+
+def info_programa():
+    msg.showinfo('',
+                  'Programa desarrollado en el marco\ndel convenio TUPED (FIUNER-CEMENER)\nautor: Colazo Maximiliano G.\nemail: maximiliano.colazo@uner.edu.ar')    
 #---------------------------------------------------------------------------------------------
 # Crear la ventana de la interfaz gráfica
 root = tk.Tk()
@@ -451,12 +447,16 @@ menu_bar = Menu(root)
 root.config(menu=menu_bar)
 #agregando items
 file = Menu(menu_bar, tearoff=0)
-file.add_command(label='Cargar Base de Datos', command=load_file)
+file.add_command(label='Cargar Base de Datos', command=cargar_archivo)
 file.add_separator()
-file.add_command(label='Procesar Base de Datos', command=mostrar_proporcion)
+file.add_command(label='Procesar Base de Datos', command=mostrar_metabolitos)
 file.add_separator()
 file.add_command(label='Salir', command=terminar_root)
 menu_bar.add_cascade(label='Inicio', menu=file)
+
+ayuda = Menu(menu_bar, tearoff=0)
+menu_bar.add_cascade(label='Ayuda', menu=ayuda)
+ayuda.add_command(label='Acerca', command=info_programa)
 
 root.iconbitmap('./imagenes/icon.ico')
 if getattr(sys, 'frozen', False):
