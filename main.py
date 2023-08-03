@@ -139,6 +139,7 @@ def guardar_bd(cabecera, matriz_region, imagen_recortada):
         session.close()
     else:
         if np.all(matriz_region == 0):
+            
             label_base.config(text="Cargar matriz regiones")
             label_base.configure(foreground='red')
         else: 
@@ -184,21 +185,23 @@ def guardar_texto(filas, columnas, cabecera, imagen_recortada):
     ventana_fig.destroy()
     guardar_bd(cabecera, matriz_region, imagen_recortada)
 
-def get_color_por_valor(valor, vmin, vmax, colormap='viridis'):
+def get_color_by_value(value, vmin, vmax, colormap='viridis'):
     """
     Obtener el color correspondiente a un valor dentro de un rango específico utilizando una paleta de colores.
+
     Parámetros:
-    valor (float): El valor para el cual se obtendrá el color.
+    value (float): El valor para el cual se obtendrá el color.
     vmin (float): Valor mínimo del rango.
     vmax (float): Valor máximo del rango.
     colormap (str): Nombre de la paleta de colores a utilizar. El valor predeterminado es 'viridis'.
+
     Retorna:
     str: El código hexadecimal de color en formato '#rrggbb'.
     """
-    norm_valor = (valor - vmin) / (vmax - vmin)
+    norm_value = (value - vmin) / (vmax - vmin)
     cmap = plt.get_cmap(colormap)
-    rgba = cmap(norm_valor)
-    #rgba = get_rgba(norm_valor)
+    rgba = cmap(norm_value)
+    #rgba = get_rgba(norm_value)
     r = int(rgba[0] * 255)
     g = int(rgba[1] * 255)
     b = int(rgba[2] * 255)
@@ -257,7 +260,7 @@ def crear_ventana_matriz(filas, columnas, cabecera, imagen_recortada):
                                width=70,
                                height=60, 
                                highlightthickness=0, 
-                               bg=get_color_por_valor(imagen_recortada[ind][j], 
+                               bg=get_color_by_value(imagen_recortada[ind][j], 
                                np.min(imagen_recortada),
                                np.max(imagen_recortada), colormap='viridis'))
             canvas.grid(row=i, column=j, padx=2, pady=2)
