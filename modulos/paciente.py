@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String, ForeignKey
 from sqlalchemy.orm import relationship
 
-from declarative_base import Base
+from modulos.declarative_base import Base
 
 class Paciente(Base):
     '''Modela a una paciente con sus atributos y funcionalidades'''

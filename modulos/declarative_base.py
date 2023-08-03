@@ -10,8 +10,6 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
 engine = create_engine('sqlite:///bd_dicom.db')
-
 Session = sessionmaker(bind=engine)
-
 Base = declarative_base()
 

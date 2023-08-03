@@ -3,8 +3,7 @@
 env
 pruebas
 *.db
-*.ico
-*png
 tmp/
 *.bak
 *.exe
+prueba

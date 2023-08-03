@@ -3,7 +3,7 @@
 from sqlalchemy import Column, Integer, String, ForeignKey
 from sqlalchemy.orm import relationship
 
-from declarative_base import Base
+from modulos.declarative_base import Base
 
 class Region(Base):
     '''Modela una region del cerebro. Tiene los atributos y funcionalidades para 
