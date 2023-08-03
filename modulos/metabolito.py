@@ -8,7 +8,7 @@ Created on Tue Jul 11 10:23:11 2023
 from sqlalchemy import Column, Integer, Float, String, ForeignKey
 from sqlalchemy.orm import relationship
 
-from declarative_base import Base
+from modulos.declarative_base import Base
 
 class Metabolito(Base):
     

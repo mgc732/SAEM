@@ -6,12 +6,12 @@ Created on Tue Jul 11 10:42:10 2023
 """
 
 from sqlalchemy import func
-from declarative_base import Session, engine, Base
-from region import Region
-from imagen import Imagen
-from paciente import Paciente
-from voxel import Voxel
-from metabolito import Metabolito
+from modulos.declarative_base import Session, engine, Base
+from modulos.region import Region
+from modulos.imagen import Imagen
+from modulos.paciente import Paciente
+from modulos.voxel import Voxel
+from modulos.metabolito import Metabolito
 
 import tkinter as tk
 from tkinter import filedialog # crear ventanas de diálogo para que los usuarios abran o guarden archivos, 
@@ -457,13 +457,14 @@ file.add_command(label='Procesar Base de Datos', command=mostrar_proporcion)
 file.add_separator()
 file.add_command(label='Salir', command=terminar_root)
 menu_bar.add_cascade(label='Inicio', menu=file)
-#root.iconbitmap('./icon.ico')
+
+root.iconbitmap('./imagenes/icon.ico')
 if getattr(sys, 'frozen', False):
     # Si se está ejecutando desde un ejecutable generado por PyInstaller
-    imagen_path = sys._MEIPASS + "./imagen.png"
+    imagen_path = sys._MEIPASS + "./imagenes/imagen.png"
 else:
     # Si se está ejecutando desde el código fuente
-    imagen_path = "./imagen.png"
+    imagen_path = "./imagenes/imagen.png"
 
 image = Image.open(imagen_path)
 imagen_tk = ImageTk.PhotoImage(image)

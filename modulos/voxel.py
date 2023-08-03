@@ -8,7 +8,7 @@ Created on Tue Jul 11 10:33:29 2023
 from sqlalchemy import Column, Integer, String, ForeignKey
 from sqlalchemy.orm import relationship
 
-from declarative_base import Base
+from modulos.declarative_base import Base
 
 class Voxel(Base):
    __tablename__ = 'voxel'

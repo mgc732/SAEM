@@ -3,7 +3,7 @@
 from sqlalchemy import Column, Integer, String, ForeignKey
 from sqlalchemy.orm import relationship
 
-from declarative_base import Base
+from modulos.declarative_base import Base
 
 class Imagen(Base):
     '''Modela una imagen con sus atributos y funcionalidades'''
