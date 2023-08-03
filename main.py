@@ -18,6 +18,8 @@ from tkinter import filedialog # crear ventanas de diálogo para que los usuario
                                #seleccionen carpetas y realicen otras operaciones relacionadas con el 
                                # sistema de archivos
 from tkinter import ttk # mejora estética 
+from tkinter import Menu
+from tkinter import messagebox as msg 
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg # permite mostrar los gráficos generados por 
                                                                 # matplotlib dentro de una ventana o marco de 
@@ -31,11 +33,11 @@ import re
 import sys
 
 
-
+# Variables globales
 filas = 0
 columnas = 0
 ventana_matriz = None
-
+letra = 11
 #--------------------------------------------------------------
 def guardar_bd(cabecera, matriz_region, imagen_recortada):
     """ Guarda información en una base de datos utilizando SQLAlchemy.
@@ -109,8 +111,8 @@ def guardar_bd(cabecera, matriz_region, imagen_recortada):
                         imagen.voxeles.append(voxel)
             session.commit()
             #print('Registro agregado(1)')
-            label_base.config(text="Registro agregado(1)")
-            label_base.configure(foreground='green')
+            msg.showinfo('Base de datos','Nuevo Paciente') 
+
         # Si existe el paciente pero no existe la imagen, la agrego
         elif not session.query(Imagen).filter(Imagen.fecha==cabecera['fecha'], Imagen.paciente_id==paciente.id, Imagen.nombre==cabecera['imagen']).all():
             paciente = session.merge(paciente)
@@ -130,21 +132,20 @@ def guardar_bd(cabecera, matriz_region, imagen_recortada):
                         imagen.voxeles.append(voxel)
             session.commit()
             #print('Registro agregado (2)')
-            label_base.config(text="Registro agregado(2)")
-            label_base.configure(foreground='green')
+            msg.showinfo('Base de datos', 'Nueva imagen asociada') 
+
         else: 
-                #print('Registro Existente')     
-                label_base.config(text="Registro Existente")
-                label_base.configure(foreground='red')
+                #print('Registro Existente')
+                msg.showinfo('Base de datos', 'Registro Existente')      
+
         session.close()
     else:
         if np.all(matriz_region == 0):
-            
-            label_base.config(text="Cargar matriz regiones")
-            label_base.configure(foreground='red')
-        else: 
-            label_base.config(text="Restricción de edad =>Registro No agregado")
-            label_base.configure(foreground='red')
+            msg.showerror('Base de datos', 'Matriz de regiones vacía') 
+
+        else:
+            msg.showerror('Base de datos', 'Restricción de edad\nEl pacientes es menor de edad')  
+
 
 def guardar_texto(filas, columnas, cabecera, imagen_recortada):
     """ Guarda información en una matriz de regiones y llama a la función 'guardar_bd' para guardarla en una base de datos.
@@ -185,23 +186,21 @@ def guardar_texto(filas, columnas, cabecera, imagen_recortada):
     ventana_fig.destroy()
     guardar_bd(cabecera, matriz_region, imagen_recortada)
 
-def get_color_by_value(value, vmin, vmax, colormap='viridis'):
+def get_color_por_valor(valor, vmin, vmax, colormap='viridis'):
     """
     Obtener el color correspondiente a un valor dentro de un rango específico utilizando una paleta de colores.
-
     Parámetros:
-    value (float): El valor para el cual se obtendrá el color.
+    valor (float): El valor para el cual se obtendrá el color.
     vmin (float): Valor mínimo del rango.
     vmax (float): Valor máximo del rango.
     colormap (str): Nombre de la paleta de colores a utilizar. El valor predeterminado es 'viridis'.
-
     Retorna:
     str: El código hexadecimal de color en formato '#rrggbb'.
     """
-    norm_value = (value - vmin) / (vmax - vmin)
+    norm_valor = (valor - vmin) / (vmax - vmin)
     cmap = plt.get_cmap(colormap)
-    rgba = cmap(norm_value)
-    #rgba = get_rgba(norm_value)
+    rgba = cmap(norm_valor)
+    #rgba = get_rgba(norm_valor)
     r = int(rgba[0] * 255)
     g = int(rgba[1] * 255)
     b = int(rgba[2] * 255)
@@ -260,14 +259,14 @@ def crear_ventana_matriz(filas, columnas, cabecera, imagen_recortada):
                                width=70,
                                height=60, 
                                highlightthickness=0, 
-                               bg=get_color_by_value(imagen_recortada[ind][j], 
+                               bg=get_color_por_valor(imagen_recortada[ind][j], 
                                np.min(imagen_recortada),
                                np.max(imagen_recortada), colormap='viridis'))
             canvas.grid(row=i, column=j, padx=2, pady=2)
         ind+=1        
     
     btn_guardar = ttk.Button(ventana_matriz, text="Guardar", command=lambda: guardar_texto(filas, columnas, cabecera, imagen_recortada))
-    btn_guardar.grid(row=filas*2+2, columnspan=columnas)
+    btn_guardar.grid(row=filas*2+2, columnspan=columnas, pady=10)
     ventana_matriz.resizable(False, False)
   
 def ventana_figura(image):
@@ -312,9 +311,7 @@ def load_file():
     if ventana_matriz!= None:
         ventana_matriz.destroy()
         ventana_fig.destroy()
-    # Reiniciar el label a un estado en blanco
-    label_carga_exitosa.config(text="")
-    label_base.config(text="")
+    
     # Abrir ventana de diálogo para seleccionar el archivo
     file_path = filedialog.askopenfilename()
     if file_path:
@@ -344,7 +341,7 @@ def load_file():
             'metabolito': metabolito,
             'imagen' :  re.search(r"DICOM/PA\d/.+/IM\d", file_path).group()
         }    
-
+        cabecera_inf = '\n'.join([f'{x.capitalize()}: {y}' for x,y in cabecera.items()])
         # Acceder a los píxeles de la imagen (si es un archivo de imagen DICOM)
         if 'PixelData' in dataset:
             image = dataset.pixel_array
@@ -357,26 +354,25 @@ def load_file():
                 columnas = np.shape(image_recortada)[1]
 
                 # Actualizar el label con el mensaje de carga exitosa del archivo
-                label_carga_exitosa.configure(text="Lectura exitosa del archivo")
-                label_carga_exitosa.configure(foreground='green')
-                # Crear la ventana de la matriz para ingresar texto
+                msg.showinfo('Lectura exitosa del archivo DICOM', cabecera_inf)
                 crear_ventana_matriz(filas, columnas, cabecera, image_recortada)
                 ventana_figura(image_recortada)
                 
             else:
                 # Actualizar el label con el mensaje de carga exitosa del archivo
-                label_carga_exitosa.configure(text="Lectura exitosa del archivo\nNo hay datos de imagen")
-                label_carga_exitosa.configure(foreground='red')
-def procesamiento(nombre):
+                msg.showinfo('Lectura exitosa del archivo DICOM', '      No hay datos de imagen      ')
+
+def procesamiento(region_seleccionda):
+    
     
     # Crear una sesión
     session = Session()
-    if nombre!='':
+    if region_seleccionda!='':
    # Realizar la consulta y calcular los promedios de concentración
         results = session.query(Metabolito.nombre, func.round(func.avg(Metabolito.concentracion), 2).label('promedio_concentracion'))\
                         .join(Voxel, Metabolito.voxel_id == Voxel.id)\
                         .join(Region, Voxel.region_id == Region.id)\
-                        .filter(Region.nombre == nombre)\
+                        .filter(Region.nombre == region_seleccionda)\
                         .group_by(Metabolito.nombre)\
                         .all()
 
@@ -386,57 +382,82 @@ def procesamiento(nombre):
             ratios[nombre] = promedio_concentracion
 
         # Calcular las proporciones de Naa/Cre y Cho/Cre
-        naa_cre_ratio = ratios['N-Acetyl'] / ratios['Creatine']  # División evitando división por cero
-        cho_cre_ratio = ratios['Choline'] / ratios['Creatine']  # División evitando división por cero
+        if ratios['Creatine']!= 0 and ratios['Choline']!=0 and ratios['N-Acetyl']!=0:
+            naa_cre_ratio = ratios['N-Acetyl']/ratios['Creatine']  
+            cho_cre_ratio = ratios['Choline']/ratios['Creatine']  
+            cre_add_cho = ratios['Creatine']+ ratios['Choline']
+            cho_naa_ratio = ratios['Choline']/ratios['N-Acetyl']
+            naa_cho_ratio = ratios['N-Acetyl']/ratios['Choline']
+            cre_naa_ratio = ratios['Creatine']/ratios['N-Acetyl']
+        else:
+            print('division por cero')
         session.close()
     else:
         naa_cre_ratio, cho_cre_ratio = 0,0
        # Crear etiquetas para mostrar las proporciones
-    tk.Label(new_window, text=f"Proporción de Naa/Cre: {naa_cre_ratio:.2f}").grid(row=1, column=0, padx=2)
-    tk.Label(new_window, text=f"Proporción de Cho/Cre: {cho_cre_ratio:.2f}").grid(row=2, column=0, padx=2)
+    
+    tk.Label(frame_region, text=f" Relación de Naa/Cre ==> {naa_cre_ratio:.3f} ",
+              font=f'Helvetica {letra} bold').grid(row=2, column=2, sticky='W')
+    tk.Label(frame_region, text=f" Relación de Cho/Cre ==> {cho_cre_ratio:.3f} ", 
+             font=f'Helvetica {letra} bold').grid(row=3, column=2, sticky='W')
+    tk.Label(frame_region, text=f" Creatine + Choline  ==> {cre_add_cho:.3f} ", 
+             font=f'Helvetica {letra} bold').grid(row=4, column=2, sticky='W')
+    tk.Label(frame_region, text=f" Relación de Cho/Naa ==> {cho_naa_ratio:.3f} ", 
+             font=f'Helvetica {letra} bold').grid(row=5, column=2, sticky='W')
+    tk.Label(frame_region, text=f" Relación de Naa/Cho ==> {naa_cho_ratio:.3f} ", 
+             font=f'Helvetica {letra} bold').grid(row=6, column=2, sticky='W')
+    tk.Label(frame_region, text=f" Relación de Cre/Naa ==> {cre_naa_ratio:.3f} ", 
+             font=f'Helvetica {letra} bold').grid(row=7, column=2, sticky='W')
 
 
 def mostrar_proporcion():
     # Crear una nueva ventana
-    global new_window
-    new_window = tk.Toplevel(root)
-    new_window.title("Proporciones")
+    global ventana_procesamiento
+    global frame_region
+    ventana_procesamiento = tk.Toplevel(root)
+    ventana_procesamiento.title("Procesamiento")
+    frame_region = ttk.LabelFrame(ventana_procesamiento, text='Región')
+    frame_region.grid(column=2, row=0, padx=20, pady=20)
+    # Label using mighty as the parent 
+    a_label = tk.Label(frame_region, text="Selector de Región")
+    a_label.grid(column=0, row=0, sticky='W')
+     
     opciones = ['','parietal', 'frontal', 'occipital', 'temporal', 'nucleo']  # Lista de opciones para el Combobox
-    combo = ttk.Combobox(new_window,
-                                 state="readonly",
-                                 values=opciones,
-                                 width=8, 
-                                 )
-    #combo.current(0)  # Seleccionar la primera opción por defecto
-    combo.grid(row=0, column=0, padx=2)
-    nombre = combo.get()
-    # Obtener las proporciones
-    
-    btn_calcular = ttk.Button(new_window, text='Calcular', command=lambda:procesamiento(nombre))
-    btn_calcular.grid(row=4, column=0)
- 
+    combo = ttk.Combobox(frame_region,
+                         state="readonly",
+                         values=opciones,
+                         width=8, 
+                         )
+    #Posicion dentro de la ventana
+    combo.grid(row=0, column=1, padx=2)
+      
+    # Evento selector => llamada a procesamiento
+    combo.bind("<<ComboboxSelected>>", lambda _:procesamiento(combo.get()))
 
-def terminar_bucle():
+
+def terminar_root():
     '''Termina la ventana principal
     '''
     root.quit()
+    root.destroy()
+    
 #---------------------------------------------------------------------------------------------
 # Crear la ventana de la interfaz gráfica
 root = tk.Tk()
-root.geometry('300x330')
+#root.geometry('300x330')
 root.title('SPEAM')
-
+#creando un menu
+menu_bar = Menu(root)
+root.config(menu=menu_bar)
+#agregando items
+file = Menu(menu_bar, tearoff=0)
+file.add_command(label='Cargar Base de Datos', command=load_file)
+file.add_separator()
+file.add_command(label='Procesar Base de Datos', command=mostrar_proporcion)
+file.add_separator()
+file.add_command(label='Salir', command=terminar_root)
+menu_bar.add_cascade(label='Inicio', menu=file)
 #root.iconbitmap('./icon.ico')
-# Crear el botón para cargar el archivo
-button = ttk.Button(root, text="Cargar archivo", command=load_file)
-button.place(x=25, y=250)
-# Boton para consultar valor
-btn_consultar = ttk.Button(root, text='Procesar', command=mostrar_proporcion)
-btn_consultar.place(x=118, y=250)
-# Agregar botón de terminar
-btn_terminar = ttk.Button(root, text="Terminar", command=terminar_bucle)
-btn_terminar.place(x=200, y=250)
-
 if getattr(sys, 'frozen', False):
     # Si se está ejecutando desde un ejecutable generado por PyInstaller
     imagen_path = sys._MEIPASS + "./imagen.png"
@@ -449,13 +470,7 @@ imagen_tk = ImageTk.PhotoImage(image)
 
 # Crear un widget Label y mostrar la imagen
 label_imagen = ttk.Label(root, image=imagen_tk)
-label_imagen.place(x=37.5, y=10)
-
-# Crear el label para mostrar el mensaje de carga exitosa del archivo
-label_carga_exitosa = ttk.Label(root, text="")
-label_carga_exitosa.place(x=25, y=280)
-label_base = ttk.Label(root, text="")
-label_base.place(x=25, y=300)
+label_imagen.grid(row=0, column= 0)
 
 root.resizable(False, False)
 # Ejecutar el bucle principal de la interfaz gráfica
