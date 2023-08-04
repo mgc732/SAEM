@@ -365,7 +365,7 @@ def procesamiento_bd(region_seleccionda):
         results = session.query(Metabolito.nombre, func.round(func.avg(Metabolito.concentracion), 2).label('promedio_concentracion'))\
                         .join(Voxel, Metabolito.voxel_id == Voxel.id)\
                         .join(Region, Voxel.region_id == Region.id)\
-                        .filter(Region.nombre == region_seleccionda)\
+                        .filter(Region.nombre == region_seleccionda.lower())\
                         .group_by(Metabolito.nombre)\
                         .all()
 
@@ -393,13 +393,13 @@ def procesamiento_bd(region_seleccionda):
               font=f'Helvetica {letra} bold').grid(row=2, column=2, sticky='W')
     tk.Label(frame_region, text=f" Relación de Cho/Cre ==> {cho_cre_ratio:.3f} ", 
              font=f'Helvetica {letra} bold').grid(row=3, column=2, sticky='W')
-    tk.Label(frame_region, text=f" Creatine + Choline  ==> {cre_add_cho:.3f} ", 
+    tk.Label(frame_region, text=f" Creatine + Choline    ==> {cre_add_cho:.1f} ", 
              font=f'Helvetica {letra} bold').grid(row=4, column=2, sticky='W')
     tk.Label(frame_region, text=f" Relación de Cho/Naa ==> {cho_naa_ratio:.3f} ", 
              font=f'Helvetica {letra} bold').grid(row=5, column=2, sticky='W')
     tk.Label(frame_region, text=f" Relación de Naa/Cho ==> {naa_cho_ratio:.3f} ", 
              font=f'Helvetica {letra} bold').grid(row=6, column=2, sticky='W')
-    tk.Label(frame_region, text=f" Relación de Cre/Naa ==> {cre_naa_ratio:.3f} ", 
+    tk.Label(frame_region, text=f" Relación de Cre/Naa  ==> {cre_naa_ratio:.3f} ", 
              font=f'Helvetica {letra} bold').grid(row=7, column=2, sticky='W')
 
 
@@ -415,18 +415,18 @@ def mostrar_metabolitos():
     a_label = tk.Label(frame_region, text="Selector de Región")
     a_label.grid(column=0, row=0, sticky='W')
      
-    opciones = ['','parietal', 'frontal', 'occipital', 'temporal', 'nucleo']  # Lista de opciones para el Combobox
+    opciones = ['','Parietal', 'Frontal', 'Occipital', 'Temporal', 'Nucleo']  # Lista de opciones para el Combobox
     combo = ttk.Combobox(frame_region,
                          state="readonly",
                          values=opciones,
-                         width=8, 
+                         width=9, 
                          )
     #Posicion dentro de la ventana
     combo.grid(row=0, column=1, padx=2)
       
     # Evento selector => llamada a procesamiento
     combo.bind("<<ComboboxSelected>>", lambda _:procesamiento_bd(combo.get()))
-
+    ventana_procesamiento.resizable(False, False)
 
 def terminar_root():
     '''Termina la ventana principal
@@ -437,7 +437,8 @@ def terminar_root():
 def info_programa():
     msg.showinfo('SPEAM',
 '''Sistema de Procesamiento, Explotación y Almacenamiento de Metabolitos.
-Software desarrollado en el marco del convenio de trabajo de la carrera TUPED.\n 
+Software desarrollado en el marco del convenio de trabajo de la Tecnicatura Universitaria en Explotación de Datos 
+(TUPED) de la FIUNER.\n 
 Autor: Colazo Maximiliano G.
 Contacto: maximiliano.colazo@uner.edu.ar''')    
 #---------------------------------------------------------------------------------------------
@@ -459,7 +460,7 @@ menu_bar.add_cascade(label='Inicio', menu=file)
 
 ayuda = Menu(menu_bar, tearoff=0)
 menu_bar.add_cascade(label='Ayuda', menu=ayuda)
-ayuda.add_command(label='Acerca', command=info_programa)
+ayuda.add_command(label='Acerca de', command=info_programa)
 
 root.iconbitmap('./imagenes/icon.ico')
 if getattr(sys, 'frozen', False):
