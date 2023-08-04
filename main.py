@@ -435,8 +435,11 @@ def terminar_root():
     root.destroy()
 
 def info_programa():
-    msg.showinfo('',
-                  'Programa desarrollado en el marco\ndel convenio TUPED (FIUNER-CEMENER)\nautor: Colazo Maximiliano G.\nemail: maximiliano.colazo@uner.edu.ar')    
+    msg.showinfo('SPEAM',
+'''Sistema de Procesamiento, Explotación y Almacenamiento de Metabolitos.
+Software desarrollado en el marco del convenio de trabajo de la carrera TUPED.\n 
+Autor: Colazo Maximiliano G.
+Contacto: maximiliano.colazo@uner.edu.ar''')    
 #---------------------------------------------------------------------------------------------
 # Crear la ventana de la interfaz gráfica
 root = tk.Tk()
