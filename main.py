@@ -70,73 +70,90 @@ def guardar_bd(cabecera, matriz_region, imagen_recortada):
         regiones.append(Region(id=5, nombre='nucleo'))
         
         for region in regiones:
-            existing_objeto = session.get(Region, region.id)
+            region_bd = session.get(Region, region.id)
             # Verificar si el objeto existe en la base de datos
-            if existing_objeto:
-                # El objeto ya existe en la base de datos, no es necesario volver a escribirlo
-                print("El objeto ya existe en la base de datos")
-            else:
-                # El objeto no existe en la base de datos, puedes escribirlo
+            if region_bd is None:
                 session.add(region)
-                session.commit()
-                print("El objeto ha sido guardado en la base de datos")
-
-        paciente = Paciente(id=cabecera['id'], 
+                msg.showinfo('Base de datos','Agregada nuevo Región')
+        paciente_mem = Paciente(id=cabecera['id'], 
                             nombre=cabecera['nombre'],
                             apellido=cabecera['apellido'], 
                             edad=cabecera['edad'], 
                             genero=cabecera['genero'])
+        imagen_mem = Imagen(nombre=cabecera['imagen'], fecha =cabecera['fecha'])
+        paciente_bd = session.query(Paciente).filter_by(id=paciente_mem.id).first() 
+        
         # Si no existe el paciente, lo agrego
-        if not session.get(Paciente, paciente.id):
-            session.add(paciente)
-            imagen = Imagen(nombre=cabecera['imagen'], fecha =cabecera['fecha'], paciente=paciente)
-            session.add(imagen)
-            paciente.imagenes.append(imagen)
+        if paciente_bd is None:
+            #session.add(paciente)
+            #imagen = Imagen(nombre=cabecera['imagen'], fecha =cabecera['fecha'], paciente=paciente)
+            #session.add(imagen)
+            #paciente.imagenes.append(imagen)
             for i in range(len(matriz_region)):
                 for j in range(len(matriz_region[0])):
                     if matriz_region[i][j]!=0:
                         metabolito = Metabolito(nombre=cabecera['metabolito'], concentracion= imagen_recortada[i][j])
-                        session.add(metabolito)
-                        voxel = Voxel(fila=i, columna= j, imagen=imagen)
-                        session.add(voxel)
-                        
-                        voxel.region =  session.get(Region, int(matriz_region[i][j]))
-                        metabolito.voxel = voxel
-                        imagen.voxeles.append(voxel)
-            session.commit()
+                        #session.add(metabolito)
+                        voxel = Voxel(fila=i, columna= j)
+                        #session.add(voxel)
+                        voxel.region = session.get(Region, int(matriz_region[i][j]))
+                        voxel.metabolitos.append(metabolito)
+                        #metabolito.voxel = voxel
+                        imagen_mem.voxeles.append(voxel)
+            paciente_mem.imagenes.append(imagen_mem)
+            session.add(paciente_mem)
             #print('Registro agregado(1)')
-            msg.showinfo('Base de datos','Nuevo Paciente') 
+            msg.showinfo('Base de datos','Agregado nuevo Paciente') 
 
         # Si existe el paciente pero no existe la imagen, la agrego
-        elif not session.query(Imagen).filter(Imagen.fecha==cabecera['fecha'], Imagen.paciente_id==paciente.id, Imagen.nombre==cabecera['imagen']).all():
-            paciente = session.merge(paciente)
-            imagen = Imagen(nombre=cabecera['imagen'], fecha =cabecera['fecha'], paciente=paciente)
-            session.add(imagen)
-            paciente.imagenes.append(imagen)
+        elif imagen_mem.id not in [ima.id for ima in paciente_bd.imagenes]:
+            #paciente = session.merge(paciente)
+            #imagen = Imagen(nombre=cabecera['imagen'], fecha =cabecera['fecha'], paciente=paciente)
+            #session.add(imagen)
+            #paciente.imagenes.append(imagen)
             for i in range(len(matriz_region)):
                 for j in range(len(matriz_region[0])):
                     if matriz_region[i][j]!=0:
                         metabolito = Metabolito(nombre=cabecera['metabolito'], concentracion= imagen_recortada[i][j])
-                        session.add(metabolito)
-                        voxel = Voxel(fila=i, columna= j, imagen=imagen)
-                        session.add(voxel)
-                       
-                        voxel.region =  session.get(Region, int(matriz_region[i][j]))
-                        metabolito.voxel = voxel
-                        imagen.voxeles.append(voxel)
-            session.commit()
+                        #session.add(metabolito)
+                        voxel = Voxel(fila=i, columna= j)
+                        #session.add(voxel)
+                        voxel.region = session.get(Region, int(matriz_region[i][j]))
+                        voxel.metabolitos.append(metabolito)
+                        #metabolito.voxel = voxel
+                        imagen_mem.voxeles.append(voxel)
+            paciente_bd.imagenes.append(imagen_mem)
             #print('Registro agregado (2)')
-            msg.showinfo('Base de datos', 'Nueva imagen asociada') 
+            msg.showinfo('Base de datos', 'Nueva imagen asociada al paciente') 
 
         else: 
-                #print('Registro Existente')
-                msg.showinfo('Base de datos', 'Registro Existente')      
+            imagen_bd = session.query(Imagen).filter_by(id=imagen_mem.id).first()
+            lista_tuplas = [(i, j) for i in range(len(matriz_region)) for j in range(len(matriz_region[0])) if matriz_region[i][j]!=0]
+            #print(lista_tuplas)
+            for tupla in lista_tuplas:
+                voxel = Voxel(fila=tupla[0], columna= tupla[1])
+                voxel.region = session.get(Region, int(matriz_region[tupla[0]][tupla[1]]))
+                if voxel not in [vox_db for vox_db in imagen_bd.voxeles]:
+                    metabolito = Metabolito(nombre=cabecera['metabolito'], concentracion= imagen_recortada[tupla[0]][tupla[1]])
+                    voxel.metabolitos.append(metabolito)
+                    imagen_bd.voxeles.append(voxel)
+                    msg.showinfo('Base de datos', 'Nuevo voxel asociado a la imagen')
+                else:
+                    vox_bd = imagen_bd.voxeles[imagen_bd.voxeles.index(voxel)]                                                        
+                    if cabecera['metabolito'] not in [meta.nombre for meta in vox_bd.metabolitos] and vox_bd.region_id == int(matriz_region[tupla[0]][tupla[1]]):
+                        #print(vox_bd.region_id, int(matriz_region[tupla[0]][tupla[1]]))
+                        metabolito = Metabolito(nombre=cabecera['metabolito'],  concentracion= imagen_recortada[tupla[0]][tupla[1]])
+                        vox_bd.metabolitos.append(metabolito)
+                        msg.showinfo('Base de datos', 'Nuevo Metabolito asociado')
+                    else:
+                        msg.showerror('Base de datos', 'Compruebe los datos')
 
+      
+        session.commit()
         session.close()
     else:
         if np.all(matriz_region == 0):
-            msg.showerror('Base de datos', 'Matriz de regiones vacía') 
-
+            msg.showerror('Base de datos', 'Regiones vacía') 
         else:
             msg.showerror('Base de datos', 'Restricción de edad\nEl paciente es menor de edad')  
 
@@ -332,7 +349,7 @@ def cargar_archivo():
             'edad': int(re.sub('^0+', '', re.sub('[^\d]', '', dataset.PatientAge))),
             'fecha': fecha,
             'metabolito': metabolito,
-            'imagen' :  re.search(r"DICOM/PA\d/.+/IM\d", file_path).group()
+            'imagen' :  re.search(r"IM\d", file_path).group()
         }    
         cabecera_inf = '\n'.join([f'{x.capitalize()}: {y}' for x,y in cabecera.items()])
         # Acceder a los píxeles de la imagen (si es un archivo de imagen DICOM)
@@ -353,7 +370,7 @@ def cargar_archivo():
                 
             else:
                 # Actualizar el label con el mensaje de carga exitosa del archivo
-                msg.showinfo('Lectura exitosa del archivo DICOM', '      No hay datos de imagen      ')
+                msg.showinfo('Lectura exitosa del archivo DICOM', '      No hay datos asociados a una imagen      ')
 
 def procesamiento_bd(region_seleccionda):
     

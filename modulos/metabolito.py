@@ -11,10 +11,18 @@ from sqlalchemy.orm import relationship
 from modulos.declarative_base import Base
 
 class Metabolito(Base):
-    
+   
     __tablename__ = 'metabolito'
     id = Column(Integer, primary_key=True)
     nombre = Column(String)
     concentracion = Column(Float)
     voxel_id = Column(Integer, ForeignKey('voxel.id'))
     voxel = relationship('Voxel', back_populates='metabolitos')
+   
+    def __init__(self, nombre, concentracion):
+        self.nombre = nombre
+        self.concentracion = concentracion
+        #self.imagen = imagen
+       
+    def __str__(self):
+        return f'voxel: ({self.nombre}, {self.concentracion})'
