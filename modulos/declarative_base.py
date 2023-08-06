@@ -6,10 +6,9 @@ Created on Tue Jul 11 10:18:11 2023
 """
 
 from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, declarative_base
 
-engine = create_engine('sqlite:///bd_dicom.db')
+engine = create_engine('sqlite:///prueba//bd_dicom.db')
 Session = sessionmaker(bind=engine)
 Base = declarative_base()
 

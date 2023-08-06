@@ -4,7 +4,6 @@ Created on Tue Jul 11 10:42:10 2023
 
 @author: Max
 """
-
 from sqlalchemy import func
 from modulos.declarative_base import Session, engine, Base
 from modulos.region import Region
@@ -74,7 +73,7 @@ def guardar_bd(cabecera, matriz_region, imagen_recortada):
             # Verificar si el objeto existe en la base de datos
             if region_bd is None:
                 session.add(region)
-                msg.showinfo('Base de datos','Agregada nuevo Región')
+                msg.showinfo('Base de datos','Agregada nueva Región')
         paciente_mem = Paciente(id=cabecera['id'], 
                             nombre=cabecera['nombre'],
                             apellido=cabecera['apellido'], 
@@ -146,7 +145,7 @@ def guardar_bd(cabecera, matriz_region, imagen_recortada):
                         vox_bd.metabolitos.append(metabolito)
                         msg.showinfo('Base de datos', 'Nuevo Metabolito asociado')
                     else:
-                        msg.showerror('Base de datos', 'Compruebe los datos')
+                        msg.showwarning('Base de datos', 'Compruebe los datos')
 
       
         session.commit()
@@ -373,12 +372,29 @@ def cargar_archivo():
                 msg.showinfo('Lectura exitosa del archivo DICOM', '      No hay datos asociados a una imagen      ')
 
 def procesamiento_bd(region_seleccionda):
-    
-    
+    '''Realiza el procesamiento de datos en la base de datos para una región específica.
+    Args:
+        region_seleccionada (str): El nombre de la región seleccionada en minúsculas.
+    Returns:
+        None
+    Description:
+        Esta función realiza una consulta en la base de datos para obtener los promedios de concentración de metabolitos
+        en la región seleccionada. Luego, calcula las proporciones de Naa/Cre y Cho/Cre. Si alguna de las divisiones por cero
+        ocurre, imprime un mensaje de advertencia.
+        Parameters:
+            - region_seleccionada: El nombre de la región seleccionada en minúsculas, como 'parietal' o 'frontal'.
+        Results:
+        - Muestra en una interfaz gráfica las siguientes relaciones:
+            * Relación de Naa/Cre
+            * Relación de Cho/Cre
+            * Suma de Creatina y Colina
+            * Relación de Cho/Naa
+            * Relación de Naa/Cho
+            * Relación de Cre/Naa '''
     # Crear una sesión
     session = Session()
     if region_seleccionda!='':
-   # Realizar la consulta y calcular los promedios de concentración
+    #Realizar la consulta y calcular los promedios de concentración
         results = session.query(Metabolito.nombre, func.round(func.avg(Metabolito.concentracion), 2).label('promedio_concentracion'))\
                         .join(Voxel, Metabolito.voxel_id == Voxel.id)\
                         .join(Region, Voxel.region_id == Region.id)\
@@ -400,7 +416,7 @@ def procesamiento_bd(region_seleccionda):
             naa_cho_ratio = ratios['N-Acetyl']/ratios['Choline']
             cre_naa_ratio = ratios['Creatine']/ratios['N-Acetyl']
         else:
-            print('division por cero')
+            pass
         session.close()
     else:
         naa_cre_ratio, cho_cre_ratio = 0,0
@@ -421,6 +437,26 @@ def procesamiento_bd(region_seleccionda):
 
 
 def mostrar_metabolitos():
+    '''Realiza el procesamiento de datos en la base de datos para una región específica.
+    Args:
+        region_seleccionada (str): El nombre de la región seleccionada en minúsculas.
+    Returns:
+        None
+    Description:
+        Esta función realiza una consulta en la base de datos para obtener los promedios de concentración de metabolitos
+        en la región seleccionada. Luego, calcula las proporciones de Naa/Cre y Cho/Cre. Si alguna de las divisiones por cero
+        ocurre, imprime un mensaje de advertencia.
+        Parameters:
+        - region_seleccionada: El nombre de la región seleccionada en minúsculas, como 'parietal' o 'frontal'.
+
+        Results:
+        - Muestra en una interfaz gráfica las siguientes relaciones:
+            * Relación de Naa/Cre
+            * Relación de Cho/Cre
+            * Suma de Creatina y Colina
+            * Relación de Cho/Naa
+            * Relación de Naa/Cho
+            * Relación de Cre/Naa'''
     # Crear una nueva ventana
     global ventana_procesamiento
     global frame_region
