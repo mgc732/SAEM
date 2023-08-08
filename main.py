@@ -564,12 +564,37 @@ def exportar_csv():
         g.map_diag(sns.histplot)
         g.map_offdiag(sns.scatterplot)
         g.map_offdiag(sns.regplot, scatter_kws={'alpha':0.5})
-
         # Agregar una leyenda
         g.add_legend()
-
         # Guardar el gráfico como un archivo PDF
-        plt.savefig('./data/scatterplot_with_trendlines.pdf')
+        plt.figure()
+        g.savefig('./data/scatterplot_with_trendlines.pdf')
+        # Calcular la matriz de correlación
+        correlation_matrix = df.drop(columns=['id_paciente',
+                                            'nombre_metabolito',
+                                            'concentracion',
+                                            'region', 
+                                            'fecha_imagen',
+                                            'Choline',
+                                            'N-Acetyl',
+                                            'Creatine',
+                                            'genero']).corr()
+        plt.figure()
+        # Graficar la matriz de correlación
+        sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm')
+        plt.tight_layout()
+        plt.savefig('./data/heatmap.pdf')
+        '''
+        correlation_with_age = df.drop(columns=['id_paciente',
+                                            'nombre_metabolito',
+                                            'concentracion',
+                                            'region', 
+                                            'fecha_imagen',
+                                            'Choline',
+                                            'N-Acetyl',
+                                            'Creatine',
+                                            'genero']).corr()['edad'].drop('edad')
+        print(correlation_with_age)'''
         df_csv.to_csv(nombre_archivo, index=False, sep=',')
         msg.showinfo("Éxito", "El csv ha sido guardado con éxito.")
 
