@@ -4,7 +4,6 @@ Created on Tue Jul 11 10:42:10 2023
 
 @author: Max
 """
-
 from sqlalchemy import func
 from modulos.declarative_base import Session, engine, Base
 from modulos.region import Region
@@ -19,6 +18,8 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg # permite mostrar los gráficos generados por 
                                                                 # matplotlib dentro de una ventana o marco de 
                                                                 # tkinter
+import seaborn as sns
+
 from PIL import Image, ImageTk # La biblioteca Pillow proporciona un conjunto de herramientas poderosas para 
                                # trabajar con imágenes en Python, permitiendo abrir, manipular, guardar y mostrar 
                                # imágenes en diferentes formatos
@@ -26,13 +27,15 @@ import pydicom
 import numpy as np
 import re
 import sys
-
+import pandas as pd
 
 # Variables globales
 filas = 0
 columnas = 0
 ventana_matriz = None
 letra = 11
+df = pd.DataFrame()
+
 #--------------------------------------------------------------
 def guardar_bd(cabecera, matriz_region, imagen_recortada):
     """ Guarda información en una base de datos utilizando SQLAlchemy.
@@ -70,73 +73,90 @@ def guardar_bd(cabecera, matriz_region, imagen_recortada):
         regiones.append(Region(id=5, nombre='nucleo'))
         
         for region in regiones:
-            existing_objeto = session.get(Region, region.id)
+            region_bd = session.get(Region, region.id)
             # Verificar si el objeto existe en la base de datos
-            if existing_objeto:
-                # El objeto ya existe en la base de datos, no es necesario volver a escribirlo
-                print("El objeto ya existe en la base de datos")
-            else:
-                # El objeto no existe en la base de datos, puedes escribirlo
+            if region_bd is None:
                 session.add(region)
-                session.commit()
-                print("El objeto ha sido guardado en la base de datos")
-
-        paciente = Paciente(id=cabecera['id'], 
+                msg.showinfo('Base de datos','Agregada nueva Región')
+        paciente_mem = Paciente(id=cabecera['id'], 
                             nombre=cabecera['nombre'],
                             apellido=cabecera['apellido'], 
                             edad=cabecera['edad'], 
                             genero=cabecera['genero'])
+        imagen_mem = Imagen(nombre=cabecera['imagen'], fecha =cabecera['fecha'])
+        paciente_bd = session.query(Paciente).filter_by(id=paciente_mem.id).first() 
+        
         # Si no existe el paciente, lo agrego
-        if not session.get(Paciente, paciente.id):
-            session.add(paciente)
-            imagen = Imagen(nombre=cabecera['imagen'], fecha =cabecera['fecha'], paciente=paciente)
-            session.add(imagen)
-            paciente.imagenes.append(imagen)
+        if paciente_bd is None:
+            #session.add(paciente)
+            #imagen = Imagen(nombre=cabecera['imagen'], fecha =cabecera['fecha'], paciente=paciente)
+            #session.add(imagen)
+            #paciente.imagenes.append(imagen)
             for i in range(len(matriz_region)):
                 for j in range(len(matriz_region[0])):
                     if matriz_region[i][j]!=0:
                         metabolito = Metabolito(nombre=cabecera['metabolito'], concentracion= imagen_recortada[i][j])
-                        session.add(metabolito)
-                        voxel = Voxel(fila=i, columna= j, imagen=imagen)
-                        session.add(voxel)
-                        
-                        voxel.region =  session.get(Region, int(matriz_region[i][j]))
-                        metabolito.voxel = voxel
-                        imagen.voxeles.append(voxel)
-            session.commit()
+                        #session.add(metabolito)
+                        voxel = Voxel(fila=i, columna= j)
+                        #session.add(voxel)
+                        voxel.region = session.get(Region, int(matriz_region[i][j]))
+                        voxel.metabolitos.append(metabolito)
+                        #metabolito.voxel = voxel
+                        imagen_mem.voxeles.append(voxel)
+            paciente_mem.imagenes.append(imagen_mem)
+            session.add(paciente_mem)
             #print('Registro agregado(1)')
-            msg.showinfo('Base de datos','Nuevo Paciente') 
+            msg.showinfo('Base de datos','Agregado nuevo Paciente') 
 
         # Si existe el paciente pero no existe la imagen, la agrego
-        elif not session.query(Imagen).filter(Imagen.fecha==cabecera['fecha'], Imagen.paciente_id==paciente.id, Imagen.nombre==cabecera['imagen']).all():
-            paciente = session.merge(paciente)
-            imagen = Imagen(nombre=cabecera['imagen'], fecha =cabecera['fecha'], paciente=paciente)
-            session.add(imagen)
-            paciente.imagenes.append(imagen)
+        elif imagen_mem.id not in [ima.id for ima in paciente_bd.imagenes]:
+            #paciente = session.merge(paciente)
+            #imagen = Imagen(nombre=cabecera['imagen'], fecha =cabecera['fecha'], paciente=paciente)
+            #session.add(imagen)
+            #paciente.imagenes.append(imagen)
             for i in range(len(matriz_region)):
                 for j in range(len(matriz_region[0])):
                     if matriz_region[i][j]!=0:
                         metabolito = Metabolito(nombre=cabecera['metabolito'], concentracion= imagen_recortada[i][j])
-                        session.add(metabolito)
-                        voxel = Voxel(fila=i, columna= j, imagen=imagen)
-                        session.add(voxel)
-                       
-                        voxel.region =  session.get(Region, int(matriz_region[i][j]))
-                        metabolito.voxel = voxel
-                        imagen.voxeles.append(voxel)
-            session.commit()
+                        #session.add(metabolito)
+                        voxel = Voxel(fila=i, columna= j)
+                        #session.add(voxel)
+                        voxel.region = session.get(Region, int(matriz_region[i][j]))
+                        voxel.metabolitos.append(metabolito)
+                        #metabolito.voxel = voxel
+                        imagen_mem.voxeles.append(voxel)
+            paciente_bd.imagenes.append(imagen_mem)
             #print('Registro agregado (2)')
-            msg.showinfo('Base de datos', 'Nueva imagen asociada') 
+            msg.showinfo('Base de datos', 'Nueva imagen asociada al paciente') 
 
         else: 
-                #print('Registro Existente')
-                msg.showinfo('Base de datos', 'Registro Existente')      
+            imagen_bd = session.query(Imagen).filter_by(id=imagen_mem.id).first()
+            lista_tuplas = [(i, j) for i in range(len(matriz_region)) for j in range(len(matriz_region[0])) if matriz_region[i][j]!=0]
+            #print(lista_tuplas)
+            for tupla in lista_tuplas:
+                voxel = Voxel(fila=tupla[0], columna= tupla[1])
+                voxel.region = session.get(Region, int(matriz_region[tupla[0]][tupla[1]]))
+                if voxel not in [vox_db for vox_db in imagen_bd.voxeles]:
+                    metabolito = Metabolito(nombre=cabecera['metabolito'], concentracion= imagen_recortada[tupla[0]][tupla[1]])
+                    voxel.metabolitos.append(metabolito)
+                    imagen_bd.voxeles.append(voxel)
+                    msg.showinfo('Base de datos', 'Nuevo voxel asociado a la imagen')
+                else:
+                    vox_bd = imagen_bd.voxeles[imagen_bd.voxeles.index(voxel)]                                                        
+                    if cabecera['metabolito'] not in [meta.nombre for meta in vox_bd.metabolitos] and vox_bd.region_id == int(matriz_region[tupla[0]][tupla[1]]):
+                        #print(vox_bd.region_id, int(matriz_region[tupla[0]][tupla[1]]))
+                        metabolito = Metabolito(nombre=cabecera['metabolito'],  concentracion= imagen_recortada[tupla[0]][tupla[1]])
+                        vox_bd.metabolitos.append(metabolito)
+                        msg.showinfo('Base de datos', 'Nuevo Metabolito asociado')
+                    else:
+                        msg.showwarning('Base de datos', 'Compruebe los datos')
 
+      
+        session.commit()
         session.close()
     else:
         if np.all(matriz_region == 0):
-            msg.showerror('Base de datos', 'Matriz de regiones vacía') 
-
+            msg.showerror('Base de datos', 'Regiones vacía') 
         else:
             msg.showerror('Base de datos', 'Restricción de edad\nEl paciente es menor de edad')  
 
@@ -224,7 +244,7 @@ def crear_ventana_matriz(filas, columnas, cabecera, imagen_recortada):
     """
     global ventana_matriz
     global matriz_entries
-   
+    
     ventana_matriz = tk.Toplevel(root)
     ventana_matriz.title("Regiones")
     matriz_entries = []
@@ -332,7 +352,7 @@ def cargar_archivo():
             'edad': int(re.sub('^0+', '', re.sub('[^\d]', '', dataset.PatientAge))),
             'fecha': fecha,
             'metabolito': metabolito,
-            'imagen' :  re.search(r"DICOM/PA\d/.+/IM\d", file_path).group()
+            'imagen' :  re.search(r"IM\d", file_path).group()
         }    
         cabecera_inf = '\n'.join([f'{x.capitalize()}: {y}' for x,y in cabecera.items()])
         # Acceder a los píxeles de la imagen (si es un archivo de imagen DICOM)
@@ -353,62 +373,156 @@ def cargar_archivo():
                 
             else:
                 # Actualizar el label con el mensaje de carga exitosa del archivo
-                msg.showinfo('Lectura exitosa del archivo DICOM', '      No hay datos de imagen      ')
+                msg.showinfo('Lectura exitosa del archivo DICOM', '      No hay datos asociados a una imagen      ')
 
 def procesamiento_bd(region_seleccionda):
-    
-    
+    '''Realiza el procesamiento de datos en la base de datos para una región específica.
+    Args:
+        region_seleccionada (str): El nombre de la región seleccionada en minúsculas.
+    Returns:
+        None
+    Description:
+        Esta función realiza una consulta en la base de datos para obtener los promedios de concentración de metabolitos
+        en la región seleccionada. Luego, calcula las proporciones de Naa/Cre y Cho/Cre. Si alguna de las divisiones por cero
+        ocurre, imprime un mensaje de advertencia.
+        Parameters:
+            - region_seleccionada: El nombre de la región seleccionada en minúsculas, como 'parietal' o 'frontal'.
+        Results:
+        - Muestra en una interfaz gráfica las siguientes relaciones:
+            * Relación de Naa/Cre
+            * Relación de Cho/Cre
+            * Suma de Creatina y Colina
+            * Relación de Cho/Naa
+            * Relación de Naa/Cho
+            * Relación de Cre/Naa '''
     # Crear una sesión
     session = Session()
     if region_seleccionda!='':
-   # Realizar la consulta y calcular los promedios de concentración
-        results = session.query(Metabolito.nombre, func.round(func.avg(Metabolito.concentracion), 2).label('promedio_concentracion'))\
-                        .join(Voxel, Metabolito.voxel_id == Voxel.id)\
-                        .join(Region, Voxel.region_id == Region.id)\
-                        .filter(Region.nombre == region_seleccionda.lower())\
-                        .group_by(Metabolito.nombre)\
-                        .all()
+        results = session.query(Metabolito.nombre,
+                                Metabolito.concentracion,
+                                Region.nombre,
+                                Paciente.id,
+                                Paciente.genero,
+                                Paciente.edad,
+                                Imagen.fecha
+                            ).join(Voxel, Metabolito.voxel_id == Voxel.id)\
+                            .join(Region, Voxel.region_id == Region.id)\
+                            .join(Imagen, Voxel.imagen_id == Imagen.id)\
+                            .join(Paciente, Imagen.paciente_id == Paciente.id)\
+                            .filter(Region.nombre == region_seleccionda.lower())\
+                            .all()
 
-        # Calcular las proporciones de Naa/Cre y Cho/Cre
-        ratios = {}
-        for nombre, promedio_concentracion in results:
-            ratios[nombre] = promedio_concentracion
+    # Cerrar la sesión
+    session.close()
 
+    # Crear el DataFrame a partir de los resultados de la consulta
+    global df
+    df = pd.DataFrame(results, columns=[
+        'nombre_metabolito',
+        'concentracion',
+        'region',
+        'id_paciente',
+        'genero',
+        'edad',
+        'fecha_imagen'
+    ])
+    # Calcular la mediana de 'concentracion' para cada 'id_paciente' y 'nombre_metabolito'
+    medianas = df.groupby(['id_paciente', 'nombre_metabolito'])['concentracion'].median()
+
+    # Reemplazar todos los valores de concentración con las medianas correspondientes
+    df['concentracion'] = df.set_index(['id_paciente', 'nombre_metabolito']).index.map(medianas)
+
+    # Eliminar las filas duplicadas en función de 'id_paciente' y 'nombre_metabolito'
+    df.drop_duplicates(subset=['id_paciente', 'nombre_metabolito'], keep='first', inplace=True)
+    #pd.set_option('display.max_columns', None)
+    #print(df.describe())
+    # Imprimir el DataFrame (opcional)
+    if not df.empty:
         # Calcular las proporciones de Naa/Cre y Cho/Cre
-        if ratios['Creatine']!= 0 and ratios['Choline']!=0 and ratios['N-Acetyl']!=0:
-            naa_cre_ratio = ratios['N-Acetyl']/ratios['Creatine']  
-            cho_cre_ratio = ratios['Choline']/ratios['Creatine']  
-            cre_add_cho = ratios['Creatine']+ ratios['Choline']
-            cho_naa_ratio = ratios['Choline']/ratios['N-Acetyl']
-            naa_cho_ratio = ratios['N-Acetyl']/ratios['Choline']
-            cre_naa_ratio = ratios['Creatine']/ratios['N-Acetyl']
-        else:
-            print('division por cero')
-        session.close()
+        ratios = df.pivot_table(index='id_paciente', columns='nombre_metabolito', values='concentracion', aggfunc='first')
+        
+        try:
+            ratios['N-Acetyl/Creatine'] = ratios['N-Acetyl'] / ratios['Creatine']
+            ratios['Choline/Creatine'] = ratios['Choline'] / ratios['Creatine']
+            ratios['Creatine/Choline'] = ratios['Creatine'] / ratios['Choline']
+            ratios['Choline/N-Acetyl'] = ratios['Choline'] / ratios['N-Acetyl']
+            ratios['N-Acetyl/Choline'] = ratios['N-Acetyl'] / ratios['Choline']
+            ratios['Creatine/N-Acetyl'] = ratios['Creatine'] / ratios['N-Acetyl']
+            df = pd.merge(df, ratios, left_on='id_paciente', right_on='id_paciente')
+            df.drop_duplicates(subset=['id_paciente'], keep='first', inplace=True)
+
+            #print(df.describe())
+        except ZeroDivisionError:
+            # En caso de división por cero, asignar valor predeterminado
+            ratios['N-Acetyl/Creatine'] = -1
+            ratios['Choline/Creatine'] = -1
+            ratios['Creatine/Choline'] = -1
+            ratios['Choline/N-Acetyl'] = -1
+            ratios['N-Acetyl/Choline'] = -1
+            ratios['Creatine/N-Acetyl'] = -1
+
+        # Grafico de dispersion con jitter y diferenciado por genero usando lmplot
+        '''
+        sns.lmplot(data=df, x='edad', y='N-Acetyl/Creatine', hue='genero', scatter_kws={'alpha': 0.5, 's': 30}, x_jitter=True)
+        plt.xlabel('Edad')
+        plt.ylabel('N-Acetyl/Creatine')
+        plt.title('Gráfico de dispersión con línea de tendencia por género')
+        plt.show()'''
+        # Crear etiquetas para mostrar las proporciones
+        tk.Label(frame_region, text=f" Relación de Naa/Cre ==> {ratios['N-Acetyl/Creatine'].mean():.3f} ",
+                 font=f'Helvetica {letra} bold').grid(row=2, column=2, sticky='W')
+        tk.Label(frame_region, text=f" Relación de Cho/Cre ==> {ratios['Choline/Creatine'].mean():.3f} ",
+                 font=f'Helvetica {letra} bold').grid(row=3, column=2, sticky='W')
+        tk.Label(frame_region, text=f" Creatine + Choline    ==> {(ratios['Creatine']+ratios['Choline']).mean():.1f} ",
+                 font=f'Helvetica {letra} bold').grid(row=4, column=2, sticky='W')
+        tk.Label(frame_region, text=f" Relación de Cho/Naa ==> {ratios['Choline/N-Acetyl'].mean():.3f} ",
+                 font=f'Helvetica {letra} bold').grid(row=5, column=2, sticky='W')
+        tk.Label(frame_region, text=f" Relación de Naa/Cho ==> {ratios['N-Acetyl/Choline'].mean():.3f} ",
+                 font=f'Helvetica {letra} bold').grid(row=6, column=2, sticky='W')
+        tk.Label(frame_region, text=f" Relación de Cre/Naa  ==> {ratios['Creatine/N-Acetyl'].mean():.3f} ",
+                 font=f'Helvetica {letra} bold').grid(row=7, column=2, sticky='W')
+        
     else:
-        naa_cre_ratio, cho_cre_ratio = 0,0
-       # Crear etiquetas para mostrar las proporciones
-    
-    tk.Label(frame_region, text=f" Relación de Naa/Cre ==> {naa_cre_ratio:.3f} ",
-              font=f'Helvetica {letra} bold').grid(row=2, column=2, sticky='W')
-    tk.Label(frame_region, text=f" Relación de Cho/Cre ==> {cho_cre_ratio:.3f} ", 
-             font=f'Helvetica {letra} bold').grid(row=3, column=2, sticky='W')
-    tk.Label(frame_region, text=f" Creatine + Choline    ==> {cre_add_cho:.1f} ", 
-             font=f'Helvetica {letra} bold').grid(row=4, column=2, sticky='W')
-    tk.Label(frame_region, text=f" Relación de Cho/Naa ==> {cho_naa_ratio:.3f} ", 
-             font=f'Helvetica {letra} bold').grid(row=5, column=2, sticky='W')
-    tk.Label(frame_region, text=f" Relación de Naa/Cho ==> {naa_cho_ratio:.3f} ", 
-             font=f'Helvetica {letra} bold').grid(row=6, column=2, sticky='W')
-    tk.Label(frame_region, text=f" Relación de Cre/Naa  ==> {cre_naa_ratio:.3f} ", 
-             font=f'Helvetica {letra} bold').grid(row=7, column=2, sticky='W')
-
+        # Si el DataFrame está vacío, mostrar un mensaje de advertencia
+        msg.showwarning("Advertencia", "No hay elementos para guardar.")
 
 def mostrar_metabolitos():
+    '''Realiza el procesamiento de datos en la base de datos para una región específica.
+    Args:
+        region_seleccionada (str): El nombre de la región seleccionada en minúsculas.
+    Returns:
+        None
+    Description:
+        Esta función realiza una consulta en la base de datos para obtener los promedios de concentración de metabolitos
+        en la región seleccionada. Luego, calcula las proporciones de Naa/Cre y Cho/Cre. Si alguna de las divisiones por cero
+        ocurre, imprime un mensaje de advertencia.
+        Parameters:
+        - region_seleccionada: El nombre de la región seleccionada en minúsculas, como 'parietal' o 'frontal'.
+
+        Results:
+        - Muestra en una interfaz gráfica las siguientes relaciones:
+            * Relación de Naa/Cre
+            * Relación de Cho/Cre
+            * Suma de Creatina y Colina
+            * Relación de Cho/Naa
+            * Relación de Naa/Cho
+            * Relación de Cre/Naa'''
     # Crear una nueva ventana
     global ventana_procesamiento
     global frame_region
+
     ventana_procesamiento = tk.Toplevel(root)
     ventana_procesamiento.title("Procesamiento")
+    menu_procesamiento = Menu(ventana_procesamiento)
+    ventana_procesamiento.config(menu=menu_procesamiento)
+    file = Menu(menu_procesamiento, tearoff=0)
+    file.add_command(label='Export a csv', command=exportar_csv)
+    file.add_separator()
+    file.add_command(label='Salir', command=terminar_root)
+    menu_procesamiento.add_cascade(label='File', menu=file)
+    #agregando items
+
+    
     frame_region = ttk.LabelFrame(ventana_procesamiento, text='Región')
     frame_region.grid(column=2, row=0, padx=20, pady=20)
     # Label using mighty as the parent 
@@ -427,6 +541,62 @@ def mostrar_metabolitos():
     # Evento selector => llamada a procesamiento
     combo.bind("<<ComboboxSelected>>", lambda _:procesamiento_bd(combo.get()))
     ventana_procesamiento.resizable(False, False)
+
+def exportar_csv():
+    if df.empty:
+            msg.showwarning("Advertencia", "No hay elementos para guardar.")
+    else:
+        nombre_region = df['region'].iloc[0]
+        nombre_archivo = f'./data/datos_metabolitos_{nombre_region}.csv'
+
+        df_csv = df.drop(columns=['nombre_metabolito', 'concentracion'])
+        df_correlaciones = df.drop(columns=['id_paciente',
+                                            'nombre_metabolito',
+                                            'concentracion',
+                                            'region', 
+                                            'fecha_imagen',
+                                            'Choline',
+                                            'N-Acetyl',
+                                            'Creatine'])
+        
+        # Crear el gráfico de dispersión con líneas de tendencia
+        g = sns.PairGrid(df_correlaciones, hue='genero')
+        g.map_diag(sns.histplot)
+        g.map_offdiag(sns.scatterplot)
+        g.map_offdiag(sns.regplot, scatter_kws={'alpha':0.5})
+        # Agregar una leyenda
+        g.add_legend()
+        # Guardar el gráfico como un archivo PDF
+        plt.figure()
+        g.savefig('./data/scatterplot_with_trendlines.pdf')
+        # Calcular la matriz de correlación
+        correlation_matrix = df.drop(columns=['id_paciente',
+                                            'nombre_metabolito',
+                                            'concentracion',
+                                            'region', 
+                                            'fecha_imagen',
+                                            'Choline',
+                                            'N-Acetyl',
+                                            'Creatine',
+                                            'genero']).corr()
+        plt.figure()
+        # Graficar la matriz de correlación
+        sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm')
+        plt.tight_layout()
+        plt.savefig('./data/heatmap.pdf')
+        '''
+        correlation_with_age = df.drop(columns=['id_paciente',
+                                            'nombre_metabolito',
+                                            'concentracion',
+                                            'region', 
+                                            'fecha_imagen',
+                                            'Choline',
+                                            'N-Acetyl',
+                                            'Creatine',
+                                            'genero']).corr()['edad'].drop('edad')
+        print(correlation_with_age)'''
+        df_csv.to_csv(nombre_archivo, index=False, sep=',')
+        msg.showinfo("Éxito", "El csv ha sido guardado con éxito.")
 
 def terminar_root():
     '''Termina la ventana principal

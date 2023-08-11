@@ -1,10 +1,9 @@
 # archivos y directorios ha ignorar
 *.pyc
 env
-pruebas
 *.db
 tmp/
 *.bak
 *.exe
-prueba
-modulos
+*.pdf
+*.csv
