@@ -14,8 +14,8 @@ class Metabolito(Base):
    
     __tablename__ = 'metabolito'
     id = Column(Integer, primary_key=True)
-    nombre = Column(String)
-    concentracion = Column(Float)
+    nombre = Column(String, nullable=False)
+    concentracion = Column(Float, nullable=False)
     voxel_id = Column(Integer, ForeignKey('voxel.id'))
     voxel = relationship('Voxel', back_populates='metabolitos')
    

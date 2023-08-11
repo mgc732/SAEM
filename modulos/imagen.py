@@ -9,8 +9,8 @@ class Imagen(Base):
     '''Modela una imagen con sus atributos y funcionalidades'''
     __tablename__ = 'imagen'
     id = Column(String, primary_key=True)
-    nombre = Column(String)
-    fecha = Column(String)
+    nombre = Column(String, nullable=False)
+    fecha = Column(String, nullable=False)
     # relacion bidireccional entre paciente e imagenes
     paciente_id = Column(Integer, ForeignKey('paciente.id'))
     paciente = relationship('Paciente', back_populates='imagenes')
