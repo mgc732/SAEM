@@ -10,9 +10,9 @@ class Region(Base):
     representar una region'''
     __tablename__ = 'region'
 
-    id = Column(Integer, primary_key=True, autoincrement=True, nullable=False, unique=True)
+    id = Column(Integer, primary_key=True, nullable=False, unique=True)
     nombre = Column(String)
-    voxeles = relationship('Voxel')
+    voxeles = relationship('Voxel', back_populates='region')
 
     def __init__(self, id, nombre):
         self.id = id

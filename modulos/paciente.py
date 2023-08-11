@@ -11,7 +11,7 @@ class Paciente(Base):
     apellido = Column(String)
     edad = Column(Integer)
     genero = Column(String)
-    imagenes = relationship('Imagen')
+    imagenes = relationship('Imagen', back_populates='paciente')
 
     def __init__(self, id, nombre, apellido, edad, genero):
         self.id = id
