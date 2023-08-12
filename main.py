@@ -426,6 +426,7 @@ def procesamiento_bd(region_seleccionda):
         'edad',
         'fecha_imagen'
     ])
+    df.to_csv('./data/muestrabruta.csv')
     # Calcular la mediana de 'concentracion' para cada 'id_paciente' y 'nombre_metabolito'
     medianas = df.groupby(['id_paciente', 'nombre_metabolito'])['concentracion'].median()
 

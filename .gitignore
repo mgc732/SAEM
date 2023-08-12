@@ -1,9 +1,10 @@
-# archivos y directorios ha ignorar
-*.pyc
+#carpetas
 env
-*.db
+data
 tmp/
+# archivos 
+*.pyc
+*.db
 *.bak
 *.exe
-*.pdf
-*.csv
+
