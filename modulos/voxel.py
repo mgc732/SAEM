@@ -12,11 +12,9 @@ from modulos.declarative_base import Base
 
 class Voxel(Base):
     __tablename__ = 'voxel'
-
-
     id = Column(Integer, primary_key=True)
-    fila = Column(Integer)
-    columna = Column(Integer)
+    fila = Column(Integer, nullable=False)
+    columna = Column(Integer, nullable=False)
    
     metabolitos = relationship('Metabolito', back_populates='voxel')
     imagen_id = Column(Integer, ForeignKey('imagen.id'))

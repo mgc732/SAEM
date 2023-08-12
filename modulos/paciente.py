@@ -9,9 +9,9 @@ class Paciente(Base):
     id = Column(String, primary_key=True)
     nombre = Column(String)
     apellido = Column(String)
-    edad = Column(Integer)
-    genero = Column(String)
-    imagenes = relationship('Imagen')
+    edad = Column(Integer, nullable=False)
+    genero = Column(String, nullable=False)
+    imagenes = relationship('Imagen', back_populates='paciente')
 
     def __init__(self, id, nombre, apellido, edad, genero):
         self.id = id

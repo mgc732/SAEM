@@ -4,7 +4,7 @@ Created on Tue Jul 11 10:42:10 2023
 
 @author: Max
 """
-from sqlalchemy import func
+from sqlalchemy import func, inspect
 from modulos.declarative_base import Session, engine, Base
 from modulos.region import Region
 from modulos.imagen import Imagen
@@ -37,8 +37,8 @@ letra = 11
 df = pd.DataFrame()
 
 #--------------------------------------------------------------
-def guardar_bd(cabecera, matriz_region, imagen_recortada):
-    """ Guarda información en una base de datos utilizando SQLAlchemy.
+def cargar_bd(cabecera, matriz_region, imagen_recortada):
+    """ Carga información en una base de datos utilizando SQLAlchemy.
     Parámetros:
         cabecera (dict): Un diccionario que contiene información de la cabecera, incluyendo:
             - 'id' (int): ID del paciente.
@@ -160,8 +160,8 @@ def guardar_bd(cabecera, matriz_region, imagen_recortada):
         else:
             msg.showerror('Base de datos', 'Restricción de edad\nEl paciente es menor de edad')  
 
-def guardar_region(filas, columnas, cabecera, imagen_recortada):
-    """ Guarda información en una matriz de regiones y llama a la función 'guardar_bd' para guardarla en una base de datos.
+def get_region(filas, columnas, cabecera, imagen_recortada):
+    """ obtiene información en una matriz de regiones y llama a la función 'cargar_bd' para cargarla en una base de datos.
     Parámetros:
         filas (int): Número de filas en la matriz de regiones.
         columnas (int): Número de columnas en la matriz de regiones.
@@ -177,7 +177,7 @@ def guardar_region(filas, columnas, cabecera, imagen_recortada):
         imagen_recortada (list): Una matriz (lista de listas) que representa la imagen recortada.
     Notas:
         - La función crea una matriz de regiones y la llena según los valores proporcionados en 'matriz_entries'.
-        - Llama a la función 'guardar_bd' para guardar la información en una base de datos.
+        - Llama a la función 'cargar_bd' para guardar la información en una base de datos.
         - Cierra las ventanas 'ventana_matriz' y 'ventana_fig' al guardar la información.
     """
     matriz_region = [[0]*columnas for i in range(filas)]
@@ -197,7 +197,7 @@ def guardar_region(filas, columnas, cabecera, imagen_recortada):
             
     ventana_matriz.destroy()  # Cerrar la ventana de la matriz al guardar
     ventana_fig.destroy()
-    guardar_bd(cabecera, matriz_region, imagen_recortada)
+    cargar_bd(cabecera, matriz_region, imagen_recortada)
 
 def get_color_por_valor(valor, vmin, vmax, colormap='viridis'):
     """
@@ -219,8 +219,8 @@ def get_color_por_valor(valor, vmin, vmax, colormap='viridis'):
     b = int(rgba[2] * 255)
     return f'#{r:02x}{g:02x}{b:02x}'
 
-def crear_ventana_matriz(filas, columnas, cabecera, imagen_recortada):
-    """ Crea una ventana emergente para ingresar las regiones de la matriz.
+def generar_ventana_matriz_regiones(filas, columnas, cabecera, imagen_recortada):
+    """ Crea una ventana emergente para relacionar regiones con los voxeles de la imagen.
     Parámetros:
         filas (int): Número de filas en la matriz de regiones.
         columnas (int): Número de columnas en la matriz de regiones.
@@ -239,7 +239,7 @@ def crear_ventana_matriz(filas, columnas, cabecera, imagen_recortada):
         - Cada celda de la matriz contiene un Combobox con opciones para seleccionar la región.
         - Se utiliza la variable global 'ventana_matriz' para mantener una referencia a la ventana emergente.
         - Se utiliza la variable global 'matriz_entries' para mantener una referencia a los Combobox creados.
-        - Al hacer clic en el botón 'Guardar', llama a la función 'guardar_region' para guardar la información 
+        - Al hacer clic en el botón 'Guardar', llama a la función 'get_region' para guardar la información 
           en una base de datos.
     """
     global ventana_matriz
@@ -278,12 +278,12 @@ def crear_ventana_matriz(filas, columnas, cabecera, imagen_recortada):
             canvas.grid(row=i, column=j, padx=2, pady=2)
         ind+=1        
     
-    btn_guardar = ttk.Button(ventana_matriz, text="Guardar", command=lambda: guardar_region(filas, columnas, cabecera, imagen_recortada))
-    btn_guardar.grid(row=filas*2+2, columnspan=columnas, pady=10)
+    btn_cargar = ttk.Button(ventana_matriz, text="Cargar", command=lambda: get_region(filas, columnas, cabecera, imagen_recortada))
+    btn_cargar.grid(row=filas*2+2, columnspan=columnas, pady=10)
     ventana_matriz.resizable(False, False)
   
-def ventana_figura(image):
-    """ Crea una ventana emergente que muestra una imagen utilizando Matplotlib y Tkinter.
+def generar_ventana_figura(image):
+    """ Genera una ventana emergente que muestra una imagen utilizando Matplotlib y Tkinter.
     Parámetros:
         image (numpy.ndarray): La imagen a mostrar. Debe ser un arreglo de NumPy.
     Notas:
@@ -315,7 +315,7 @@ def cargar_archivo():
     Notas:
         - La función abre una ventana de diálogo para que el usuario seleccione un archivo DICOM.
         - Accede a los metadatos y datos del archivo DICOM utilizando PyDICOM.
-        - Muestra la imagen en una ventana emergente utilizando la función 'ventana_figura'.
+        - Muestra la imagen en una ventana emergente utilizando la función 'generar_ventana_figura'.
         - Si la imagen contiene datos válidos, se recorta la matriz de la imagen y se crea una ventana emergente 
           para ingresar texto (matriz de regiones).
         - Actualiza el estado de los widgets 'label_carga_exitosa' y 'label_base' según el resultado de la carga 
@@ -368,8 +368,8 @@ def cargar_archivo():
 
                 # Actualizar el label con el mensaje de carga exitosa del archivo
                 msg.showinfo('Lectura exitosa del archivo DICOM', cabecera_inf)
-                crear_ventana_matriz(filas, columnas, cabecera, image_recortada)
-                ventana_figura(image_recortada)
+                generar_ventana_matriz_regiones(filas, columnas, cabecera, image_recortada)
+                generar_ventana_figura(image_recortada)
                 
             else:
                 # Actualizar el label con el mensaje de carga exitosa del archivo
@@ -395,119 +395,119 @@ def procesamiento_bd(region_seleccionda):
             * Relación de Cho/Naa
             * Relación de Naa/Cho
             * Relación de Cre/Naa '''
-    # Crear una sesión
-    session = Session()
-    if region_seleccionda!='':
-        results = session.query(Metabolito.nombre,
-                                Metabolito.concentracion,
-                                Region.nombre,
-                                Paciente.id,
-                                Paciente.genero,
-                                Paciente.edad,
-                                Imagen.fecha
-                            ).join(Voxel, Metabolito.voxel_id == Voxel.id)\
-                            .join(Region, Voxel.region_id == Region.id)\
-                            .join(Imagen, Voxel.imagen_id == Imagen.id)\
-                            .join(Paciente, Imagen.paciente_id == Paciente.id)\
-                            .filter(Region.nombre == region_seleccionda.lower())\
-                            .all()
-
-    # Cerrar la sesión
-    session.close()
-
-    # Crear el DataFrame a partir de los resultados de la consulta
-    global df
-    df = pd.DataFrame(results, columns=[
-        'nombre_metabolito',
-        'concentracion',
-        'region',
-        'id_paciente',
-        'genero',
-        'edad',
-        'fecha_imagen'
-    ])
-    df.to_csv('./data/muestrabruta.csv')
-    # Calcular la mediana de 'concentracion' para cada 'id_paciente' y 'nombre_metabolito'
-    medianas = df.groupby(['id_paciente', 'nombre_metabolito'])['concentracion'].median()
-
-    # Reemplazar todos los valores de concentración con las medianas correspondientes
-    df['concentracion'] = df.set_index(['id_paciente', 'nombre_metabolito']).index.map(medianas)
-
-    # Eliminar las filas duplicadas en función de 'id_paciente' y 'nombre_metabolito'
-    df.drop_duplicates(subset=['id_paciente', 'nombre_metabolito'], keep='first', inplace=True)
-    #pd.set_option('display.max_columns', None)
-    #print(df.describe())
-    # Imprimir el DataFrame (opcional)
-    if not df.empty:
-        # Calcular las proporciones de Naa/Cre y Cho/Cre
-        ratios = df.pivot_table(index='id_paciente', columns='nombre_metabolito', values='concentracion', aggfunc='first')
-        
-        try:
-            ratios['N-Acetyl/Creatine'] = ratios['N-Acetyl'] / ratios['Creatine']
-            ratios['Choline/Creatine'] = ratios['Choline'] / ratios['Creatine']
-            ratios['Creatine/Choline'] = ratios['Creatine'] / ratios['Choline']
-            ratios['Choline/N-Acetyl'] = ratios['Choline'] / ratios['N-Acetyl']
-            ratios['N-Acetyl/Choline'] = ratios['N-Acetyl'] / ratios['Choline']
-            ratios['Creatine/N-Acetyl'] = ratios['Creatine'] / ratios['N-Acetyl']
-            df = pd.merge(df, ratios, left_on='id_paciente', right_on='id_paciente')
-            df.drop_duplicates(subset=['id_paciente'], keep='first', inplace=True)
-
-            #print(df.describe())
-        except ZeroDivisionError:
-            # En caso de división por cero, asignar valor predeterminado
-            ratios['N-Acetyl/Creatine'] = -1
-            ratios['Choline/Creatine'] = -1
-            ratios['Creatine/Choline'] = -1
-            ratios['Choline/N-Acetyl'] = -1
-            ratios['N-Acetyl/Choline'] = -1
-            ratios['Creatine/N-Acetyl'] = -1
-
-        # Grafico de dispersion con jitter y diferenciado por genero usando lmplot
-        '''
-        sns.lmplot(data=df, x='edad', y='N-Acetyl/Creatine', hue='genero', scatter_kws={'alpha': 0.5, 's': 30}, x_jitter=True)
-        plt.xlabel('Edad')
-        plt.ylabel('N-Acetyl/Creatine')
-        plt.title('Gráfico de dispersión con línea de tendencia por género')
-        plt.show()'''
-        # Crear etiquetas para mostrar las proporciones
-        tk.Label(frame_region, text=f" Relación de Naa/Cre ==> {ratios['N-Acetyl/Creatine'].mean():.3f} ",
-                 font=f'Helvetica {letra} bold').grid(row=2, column=2, sticky='W')
-        tk.Label(frame_region, text=f" Relación de Cho/Cre ==> {ratios['Choline/Creatine'].mean():.3f} ",
-                 font=f'Helvetica {letra} bold').grid(row=3, column=2, sticky='W')
-        tk.Label(frame_region, text=f" Creatine + Choline    ==> {(ratios['Creatine']+ratios['Choline']).mean():.1f} ",
-                 font=f'Helvetica {letra} bold').grid(row=4, column=2, sticky='W')
-        tk.Label(frame_region, text=f" Relación de Cho/Naa ==> {ratios['Choline/N-Acetyl'].mean():.3f} ",
-                 font=f'Helvetica {letra} bold').grid(row=5, column=2, sticky='W')
-        tk.Label(frame_region, text=f" Relación de Naa/Cho ==> {ratios['N-Acetyl/Choline'].mean():.3f} ",
-                 font=f'Helvetica {letra} bold').grid(row=6, column=2, sticky='W')
-        tk.Label(frame_region, text=f" Relación de Cre/Naa  ==> {ratios['Creatine/N-Acetyl'].mean():.3f} ",
-                 font=f'Helvetica {letra} bold').grid(row=7, column=2, sticky='W')
-        
+    inspector = inspect(engine)
+    if 'paciente' not in inspector.get_table_names():
+        msg.showerror('Base de datos', 'Base de datos vacía')
+        ventana_procesamiento.destroy()
     else:
-        # Si el DataFrame está vacío, mostrar un mensaje de advertencia
-        msg.showwarning("Advertencia", "No hay elementos para guardar.")
+        # Crear una sesión
+        session = Session()
 
-def mostrar_metabolitos():
-    '''Realiza el procesamiento de datos en la base de datos para una región específica.
+        if region_seleccionda!='':
+            results = session.query(Metabolito.nombre,
+                                    Metabolito.concentracion,
+                                    Region.nombre,
+                                    Paciente.id,
+                                    Paciente.genero,
+                                    Paciente.edad,
+                                    Imagen.fecha
+                                ).join(Voxel, Metabolito.voxel_id == Voxel.id)\
+                                .join(Region, Voxel.region_id == Region.id)\
+                                .join(Imagen, Voxel.imagen_id == Imagen.id)\
+                                .join(Paciente, Imagen.paciente_id == Paciente.id)\
+                                .filter(Region.nombre == region_seleccionda.lower())\
+                                .all()
+
+        # Cerrar la sesión
+        session.close()
+
+        # Crear el DataFrame a partir de los resultados de la consulta
+        global df
+        df = pd.DataFrame(results, columns=[
+            'nombre_metabolito',
+            'concentracion',
+            'region',
+            'id_paciente',
+            'genero',
+            'edad',
+            'fecha_imagen'
+        ])
+        # Calcular la mediana de 'concentracion' para cada 'id_paciente' y 'nombre_metabolito'
+        medianas = df.groupby(['id_paciente', 'nombre_metabolito'])['concentracion'].median()
+
+        # Reemplazar todos los valores de concentración con las medianas correspondientes
+        df['concentracion'] = df.set_index(['id_paciente', 'nombre_metabolito']).index.map(medianas)
+
+        # Eliminar las filas duplicadas en función de 'id_paciente' y 'nombre_metabolito'
+        df.drop_duplicates(subset=['id_paciente', 'nombre_metabolito'], keep='first', inplace=True)
+        #pd.set_option('display.max_columns', None)
+        #print(df.describe())
+        # Imprimir el DataFrame (opcional)
+        if not df.empty:
+            # Calcular las proporciones de Naa/Cre y Cho/Cre
+            ratios = df.pivot_table(index='id_paciente', columns='nombre_metabolito', values='concentracion', aggfunc='first')
+            
+            try:
+                ratios['N-Acetyl/Creatine'] = ratios['N-Acetyl'] / ratios['Creatine']
+                ratios['Choline/Creatine'] = ratios['Choline'] / ratios['Creatine']
+                ratios['Creatine/Choline'] = ratios['Creatine'] / ratios['Choline']
+                ratios['Choline/N-Acetyl'] = ratios['Choline'] / ratios['N-Acetyl']
+                ratios['N-Acetyl/Choline'] = ratios['N-Acetyl'] / ratios['Choline']
+                ratios['Creatine/N-Acetyl'] = ratios['Creatine'] / ratios['N-Acetyl']
+                df = pd.merge(df, ratios, left_on='id_paciente', right_on='id_paciente')
+                df.drop_duplicates(subset=['id_paciente'], keep='first', inplace=True)
+
+                #print(df.describe())
+            except ZeroDivisionError:
+                # En caso de división por cero, asignar valor predeterminado
+                ratios['N-Acetyl/Creatine'] = -1
+                ratios['Choline/Creatine'] = -1
+                ratios['Creatine/Choline'] = -1
+                ratios['Choline/N-Acetyl'] = -1
+                ratios['N-Acetyl/Choline'] = -1
+                ratios['Creatine/N-Acetyl'] = -1
+
+            # Grafico de dispersion con jitter y diferenciado por genero usando lmplot
+            '''
+            sns.lmplot(data=df, x='edad', y='N-Acetyl/Creatine', hue='genero', scatter_kws={'alpha': 0.5, 's': 30}, x_jitter=True)
+            plt.xlabel('Edad')
+            plt.ylabel('N-Acetyl/Creatine')
+            plt.title('Gráfico de dispersión con línea de tendencia por género')
+            plt.show()'''
+            # Crear etiquetas para mostrar las proporciones
+            tk.Label(frame_region, text=f" Relación de Naa/Cre ==> {ratios['N-Acetyl/Creatine'].mean():.3f} ",
+                    font=f'Helvetica {letra} bold').grid(row=2, column=2, sticky='W')
+            tk.Label(frame_region, text=f" Relación de Cho/Cre ==> {ratios['Choline/Creatine'].mean():.3f} ",
+                    font=f'Helvetica {letra} bold').grid(row=3, column=2, sticky='W')
+            tk.Label(frame_region, text=f" Creatine + Choline    ==> {(ratios['Creatine']+ratios['Choline']).mean():.1f} ",
+                    font=f'Helvetica {letra} bold').grid(row=4, column=2, sticky='W')
+            tk.Label(frame_region, text=f" Relación de Cho/Naa ==> {ratios['Choline/N-Acetyl'].mean():.3f} ",
+                    font=f'Helvetica {letra} bold').grid(row=5, column=2, sticky='W')
+            tk.Label(frame_region, text=f" Relación de Naa/Cho ==> {ratios['N-Acetyl/Choline'].mean():.3f} ",
+                    font=f'Helvetica {letra} bold').grid(row=6, column=2, sticky='W')
+            tk.Label(frame_region, text=f" Relación de Cre/Naa  ==> {ratios['Creatine/N-Acetyl'].mean():.3f} ",
+                    font=f'Helvetica {letra} bold').grid(row=7, column=2, sticky='W')
+            
+        else:
+            # Si el DataFrame está vacío, mostrar un mensaje de advertencia
+            msg.showwarning("Advertencia", "No hay elementos para guardar.")
+
+def generar_ventana_de_procesamiento():
+    '''Crea y muestra una nueva ventana para el procesamiento de datos.
+    
+    Esta función crea una ventana de procesamiento utilizando la biblioteca Tkinter
+    para la interfaz gráfica. La ventana incluye opciones para exportar datos a un
+    archivo CSV y para salir de la aplicación. También contiene un selector de región
+    en un Combobox que permite al usuario elegir una región específica para el procesamiento
+    de datos. Cuando se selecciona una región, se activa una función de procesamiento de base
+    de datos para llevar a cabo la tarea correspondiente.
+
     Args:
-        region_seleccionada (str): El nombre de la región seleccionada en minúsculas.
+        None
+
     Returns:
         None
-    Description:
-        Esta función realiza una consulta en la base de datos para obtener los promedios de concentración de metabolitos
-        en la región seleccionada. Luego, calcula las proporciones de Naa/Cre y Cho/Cre. Si alguna de las divisiones por cero
-        ocurre, imprime un mensaje de advertencia.
-        Parameters:
-        - region_seleccionada: El nombre de la región seleccionada en minúsculas, como 'parietal' o 'frontal'.
-
-        Results:
-        - Muestra en una interfaz gráfica las siguientes relaciones:
-            * Relación de Naa/Cre
-            * Relación de Cho/Cre
-            * Suma de Creatina y Colina
-            * Relación de Cho/Naa
-            * Relación de Naa/Cho
-            * Relación de Cre/Naa'''
+    '''
     # Crear una nueva ventana
     global ventana_procesamiento
     global frame_region
@@ -551,6 +551,7 @@ def exportar_csv():
         nombre_archivo = f'./data/datos_metabolitos_{nombre_region}.csv'
 
         df_csv = df.drop(columns=['nombre_metabolito', 'concentracion'])
+        '''
         df_correlaciones = df.drop(columns=['id_paciente',
                                             'nombre_metabolito',
                                             'concentracion',
@@ -585,7 +586,7 @@ def exportar_csv():
         sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm')
         plt.tight_layout()
         plt.savefig('./data/heatmap.pdf')
-        '''
+        
         correlation_with_age = df.drop(columns=['id_paciente',
                                             'nombre_metabolito',
                                             'concentracion',
@@ -595,7 +596,8 @@ def exportar_csv():
                                             'N-Acetyl',
                                             'Creatine',
                                             'genero']).corr()['edad'].drop('edad')
-        print(correlation_with_age)'''
+        print(correlation_with_age)
+        '''
         df_csv.to_csv(nombre_archivo, index=False, sep=',')
         msg.showinfo("Éxito", "El csv ha sido guardado con éxito.")
 
@@ -606,8 +608,8 @@ def terminar_root():
     root.destroy()
 
 def info_programa():
-    msg.showinfo('SPEAM',
-'''Sistema de Procesamiento, Explotación y Almacenamiento de Metabolitos.
+    msg.showinfo('SAEM',
+'''Sistema de Almacenamiento y Explotación de Metabolitos.
 Software desarrollado en el marco del convenio de trabajo de la Tecnicatura Universitaria en Explotación de Datos 
 (TUPED) de la FIUNER.\n 
 Autor: Colazo Maximiliano G.
@@ -616,7 +618,7 @@ Contacto: maximiliano.colazo@uner.edu.ar''')
 # Crear la ventana de la interfaz gráfica
 root = tk.Tk()
 #root.geometry('300x330')
-root.title('SPEAM')
+root.title('SAEM')
 #creando un menu
 menu_bar = Menu(root)
 root.config(menu=menu_bar)
@@ -624,7 +626,7 @@ root.config(menu=menu_bar)
 file = Menu(menu_bar, tearoff=0)
 file.add_command(label='Cargar Base de Datos', command=cargar_archivo)
 file.add_separator()
-file.add_command(label='Procesar Base de Datos', command=mostrar_metabolitos)
+file.add_command(label='Procesar Base de Datos', command=generar_ventana_de_procesamiento)
 file.add_separator()
 file.add_command(label='Salir', command=terminar_root)
 menu_bar.add_cascade(label='Inicio', menu=file)

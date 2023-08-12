@@ -9,10 +9,8 @@ class Region(Base):
     '''Modela una region del cerebro. Tiene los atributos y funcionalidades para
     representar una region'''
     __tablename__ = 'region'
-
-
     id = Column(Integer, primary_key=True)
-    nombre = Column(String)
+    nombre = Column(String, nullable=False)
     voxeles = relationship('Voxel', back_populates='region')
 
 
