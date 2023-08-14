@@ -1,2 +1,2 @@
-# SPEAM
-Scripts desarrollados en el convenio de trabajo
+# SAEM
+Scripts desarrollados en el marco del convenio de trabajo FIUNER-CEMENER.

@@ -78,16 +78,18 @@ def cargar_bd(cabecera, matriz_region, imagen_recortada):
             if region_bd is None:
                 session.add(region)
                 msg.showinfo('Base de datos','Agregada nueva Región')
-        paciente_mem = Paciente(id=cabecera['id'], 
-                            nombre=cabecera['nombre'],
-                            apellido=cabecera['apellido'], 
-                            edad=cabecera['edad'], 
-                            genero=cabecera['genero'])
-        imagen_mem = Imagen(nombre=cabecera['imagen'], fecha =cabecera['fecha'])
+        paciente_mem = Paciente(cabecera['id'], 
+                                cabecera['nombre'],
+                                cabecera['apellido'], 
+                                cabecera['edad'], 
+                                cabecera['genero'])
+        
+        
         paciente_bd = session.query(Paciente).filter_by(id=paciente_mem.id).first() 
         
         # Si no existe el paciente, lo agrego
         if paciente_bd is None:
+            imagen_mem = Imagen(cabecera['imagen'], cabecera['fecha'])
             #session.add(paciente)
             #imagen = Imagen(nombre=cabecera['imagen'], fecha =cabecera['fecha'], paciente=paciente)
             #session.add(imagen)
@@ -95,9 +97,9 @@ def cargar_bd(cabecera, matriz_region, imagen_recortada):
             for i in range(len(matriz_region)):
                 for j in range(len(matriz_region[0])):
                     if matriz_region[i][j]!=0:
-                        metabolito = Metabolito(nombre=cabecera['metabolito'], concentracion= imagen_recortada[i][j])
+                        metabolito = Metabolito(cabecera['metabolito'], imagen_recortada[i][j])
                         #session.add(metabolito)
-                        voxel = Voxel(fila=i, columna= j)
+                        voxel = Voxel(i, j)
                         #session.add(voxel)
                         voxel.region = session.get(Region, int(matriz_region[i][j]))
                         voxel.metabolitos.append(metabolito)
@@ -106,10 +108,11 @@ def cargar_bd(cabecera, matriz_region, imagen_recortada):
             paciente_mem.imagenes.append(imagen_mem)
             session.add(paciente_mem)
             #print('Registro agregado(1)')
-            msg.showinfo('Base de datos','Agregado nuevo Paciente') 
+            msg.showinfo('Base de datos',f'Agregado Paciente:\n\t* id:{paciente_mem.id}\n\t* Imagen\n\t* Metabolito') 
 
         # Si existe el paciente pero no existe la imagen, la agrego
-        elif imagen_mem.id not in [ima.id for ima in paciente_bd.imagenes]:
+        elif (cabecera['imagen'], cabecera['fecha']) not in [(ima.nombre, ima.fecha) for ima in paciente_bd.imagenes]:
+            imagen_mem = Imagen(cabecera['imagen'], cabecera['fecha'])
             #paciente = session.merge(paciente)
             #imagen = Imagen(nombre=cabecera['imagen'], fecha =cabecera['fecha'], paciente=paciente)
             #session.add(imagen)
@@ -117,9 +120,9 @@ def cargar_bd(cabecera, matriz_region, imagen_recortada):
             for i in range(len(matriz_region)):
                 for j in range(len(matriz_region[0])):
                     if matriz_region[i][j]!=0:
-                        metabolito = Metabolito(nombre=cabecera['metabolito'], concentracion= imagen_recortada[i][j])
+                        metabolito = Metabolito(cabecera['metabolito'], imagen_recortada[i][j])
                         #session.add(metabolito)
-                        voxel = Voxel(fila=i, columna= j)
+                        voxel = Voxel(i, j)
                         #session.add(voxel)
                         voxel.region = session.get(Region, int(matriz_region[i][j]))
                         voxel.metabolitos.append(metabolito)
@@ -127,27 +130,39 @@ def cargar_bd(cabecera, matriz_region, imagen_recortada):
                         imagen_mem.voxeles.append(voxel)
             paciente_bd.imagenes.append(imagen_mem)
             #print('Registro agregado (2)')
-            msg.showinfo('Base de datos', 'Nueva imagen asociada al paciente') 
+            msg.showinfo('Base de datos', f'Agregada:\n\t* Imagen\n\t* Metabolito\nAsociada al Paciente id:{paciente_bd.id}') 
 
-        else: 
-            imagen_bd = session.query(Imagen).filter_by(id=imagen_mem.id).first()
+        else:
+            indice = 0 
+            for i, imagen in enumerate(paciente_bd.imagenes):
+                #print(imagen.nombre, imagen.fecha)
+                if (imagen.nombre, imagen.fecha) == (cabecera['imagen'], cabecera['fecha']):
+                   # print(imagen.nombre, imagen.fecha)
+                   # print(cabecera['imagen'], cabecera['fecha'])
+                    indice = i
+                    break
+            else:
+                #print(cabecera['imagen'], cabecera['fecha'])
+                msg.showerror('Base de datos', 'No se encontro la imagen')
+            imagen_bd = paciente_bd.imagenes[indice]
             lista_tuplas = [(i, j) for i in range(len(matriz_region)) for j in range(len(matriz_region[0])) if matriz_region[i][j]!=0]
             #print(lista_tuplas)
             for tupla in lista_tuplas:
-                voxel = Voxel(fila=tupla[0], columna= tupla[1])
+                voxel = Voxel(tupla[0], tupla[1])
                 voxel.region = session.get(Region, int(matriz_region[tupla[0]][tupla[1]]))
-                if voxel not in [vox_db for vox_db in imagen_bd.voxeles]:
-                    metabolito = Metabolito(nombre=cabecera['metabolito'], concentracion= imagen_recortada[tupla[0]][tupla[1]])
+                if voxel not in imagen_bd.voxeles:
+                    metabolito = Metabolito(cabecera['metabolito'], imagen_recortada[tupla[0]][tupla[1]])
                     voxel.metabolitos.append(metabolito)
                     imagen_bd.voxeles.append(voxel)
-                    msg.showinfo('Base de datos', 'Nuevo voxel asociado a la imagen')
+                    msg.showinfo('Base de datos', f'Agregado Voxel\nAsociado a:\n\t* Paciente id:{paciente_bd.id}\n\t* imagen id:{imagen_bd.id}')
                 else:
                     vox_bd = imagen_bd.voxeles[imagen_bd.voxeles.index(voxel)]                                                        
                     if cabecera['metabolito'] not in [meta.nombre for meta in vox_bd.metabolitos] and vox_bd.region_id == int(matriz_region[tupla[0]][tupla[1]]):
                         #print(vox_bd.region_id, int(matriz_region[tupla[0]][tupla[1]]))
-                        metabolito = Metabolito(nombre=cabecera['metabolito'],  concentracion= imagen_recortada[tupla[0]][tupla[1]])
+                        metabolito = Metabolito(cabecera['metabolito'],  imagen_recortada[tupla[0]][tupla[1]])
                         vox_bd.metabolitos.append(metabolito)
-                        msg.showinfo('Base de datos', 'Nuevo Metabolito asociado')
+                        msg.showinfo('Base de datos', 
+                                     f'Agregado Metabolito\nAsociado a:\n\t* Paciente id:{paciente_bd.id}\n\t* Imagen id:{imagen_bd.id}\n\t* Voxel id:{vox_bd.id}')
                     else:
                         msg.showwarning('Base de datos', 'Compruebe los datos')
 

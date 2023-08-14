@@ -21,7 +21,9 @@ class Voxel(Base):
     imagen = relationship('Imagen', back_populates='voxeles')
     region_id = Column(Integer, ForeignKey('region.id'))
     region = relationship('Region', back_populates='voxeles')
+    
     def __init__(self, fila, columna):
+        #self.id = f'{fila}_{columna}_{idimagen}'
         self.fila = fila
         self.columna = columna
         #self.imagen = imagen
