@@ -2,7 +2,6 @@
 """
 Created on Tue Jul 11 10:42:10 2023
 
-@author: Max
 """
 from sqlalchemy import func, inspect
 from modulos.declarative_base import Session, engine, Base
@@ -38,25 +37,35 @@ df = pd.DataFrame()
 
 #--------------------------------------------------------------
 def cargar_bd(cabecera, matriz_region, imagen_recortada):
-    """ Carga información en una base de datos utilizando SQLAlchemy.
-    Parámetros:
-        cabecera (dict): Un diccionario que contiene información de la cabecera, incluyendo:
-            - 'id' (int): ID del paciente.
-            - 'nombre' (str): Nombre del paciente.
-            - 'apellido' (str): Apellido del paciente.
-            - 'edad' (int): Edad del paciente.
-            - 'genero' (str): Género del paciente.
-            - 'imagen' (str): Nombre de la imagen.
-            - 'fecha' (str): Fecha de la imagen.
-            - 'metabolito' (str): Nombre del metabolito.
+    """
+    Carga la información de un paciente y su imagen a la base de datos.
 
-        matriz_region (list): Una matriz (lista de listas) que representa la región del cerebro.
-        imagen_recortada (list): Una matriz (lista de listas) que representa la imagen recortada.
-    Notas:
-        - La función utiliza SQLAlchemy para interactuar con la base de datos.
-        - Verifica si el objeto paciente ya existe en la base de datos y lo agrega si no existe.
-        - Agrega la imagen y la información del metabolito en la base de datos.
-        - Actualiza el estado del widget label_base según el resultado de la operación.
+    Args:
+        cabecera (dict): Un diccionario que contiene la información de la cabecera del paciente y la imagen.
+            Debe incluir las siguientes claves:
+                - 'id': Identificador del paciente (int).
+                - 'nombre': Nombre del paciente (str).
+                - 'apellido': Apellido del paciente (str).
+                - 'edad': Edad del paciente (int).
+                - 'genero': Género del paciente (str).
+                - 'imagen': Nombre de la imagen (str).
+                - 'fecha': Fecha de la imagen (str).
+                - 'metabolito': Nombre del metabolito (str).
+        matriz_region (list): Una matriz representando las regiones de la imagen.
+            Debe ser una lista de listas de enteros.
+        imagen_recortada (list): Una matriz con los valores de los píxeles de la imagen recortada.
+            Debe ser una lista de listas de valores numéricos.
+
+    Note:
+        La función realiza las siguientes acciones:
+        - Crea la base de datos si no existe.
+        - Agrega las regiones predefinidas en la base de datos.
+        - Agrega un paciente y su información si no existe.
+        - Agrega una imagen y sus voxels si no existe.
+        - Agrega un voxel y su metabolito si no existe.
+
+    Returns:
+        None
     """
     matriz_region = np.array(matriz_region)
     if np.any(matriz_region != 0) and cabecera['edad']>=18:
@@ -559,6 +568,28 @@ def generar_ventana_de_procesamiento():
     ventana_procesamiento.resizable(False, False)
 
 def exportar_csv():
+    """
+    Guarda datos y genera gráficos basados en un DataFrame.
+
+    Esta función guarda los datos del DataFrame en un archivo CSV y genera gráficos
+    de dispersión y mapas de calor basados en las correlaciones de las variables.
+
+    Args:
+        df (pandas.DataFrame): Un DataFrame que contiene los datos a guardar y graficar.
+
+    Returns:
+        None
+
+    Note:
+        Esta función guarda los datos en un archivo CSV y crea gráficos de dispersión y mapas de calor
+        basados en las correlaciones de variables en el DataFrame. Los gráficos se guardan en la carpeta
+        './data/'.
+
+    Example:
+        guardar_datos_y_graficos(datos_df)
+
+    """
+
     if df.empty:
             msg.showwarning("Advertencia", "No hay elementos para guardar.")
     else:

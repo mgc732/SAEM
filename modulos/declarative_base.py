@@ -2,7 +2,6 @@
 """
 Created on Tue Jul 11 10:18:11 2023
 
-@author: Max
 """
 
 from sqlalchemy import create_engine
