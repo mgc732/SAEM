@@ -23,6 +23,7 @@ from PIL import Image, ImageTk # La biblioteca Pillow proporciona un conjunto de
                                # trabajar con imágenes en Python, permitiendo abrir, manipular, guardar y mostrar 
                                # imágenes en diferentes formatos
 import pydicom
+
 import numpy as np
 import re
 import sys
@@ -380,13 +381,19 @@ def cargar_archivo():
         }    
         cabecera_inf = '\n'.join([f'{x.capitalize()}: {y}' for x,y in cabecera.items()])
         # Acceder a los píxeles de la imagen (si es un archivo de imagen DICOM)
+        rescale_slope = dataset[(0x0028, 0x1053)].value
+        rescale_intercept = dataset[(0x0028, 0x1052)].value
         if 'PixelData' in dataset:
+            # Obtener los valores de Rescale Slope y Rescale Intercept
+            #print(rescale_intercept, rescale_slope)
             image = dataset.pixel_array
-
-            if not np.all(image == 0):
+            # Aplicar la conversión automática utilizando los parámetros de Rescale Slope e Intercept
+            image_ajustados = rescalado(image, rescale_slope, rescale_intercept)
+            #print(image_ajustados)
+            if not np.all(image_ajustados == 0):
                 # Recortar la matriz utilizando los índices     
-                filas_no_cero, columnas_no_cero = np.nonzero(image)
-                image_recortada = image[min(filas_no_cero):max(filas_no_cero)+1, min(columnas_no_cero):max(columnas_no_cero)+1]
+                filas_no_cero, columnas_no_cero = np.nonzero(image_ajustados)
+                image_recortada = image_ajustados[min(filas_no_cero):max(filas_no_cero)+1, min(columnas_no_cero):max(columnas_no_cero)+1]
                 filas = np.shape(image_recortada)[0]
                 columnas = np.shape(image_recortada)[1]
 
@@ -398,6 +405,13 @@ def cargar_archivo():
             else:
                 # Actualizar el label con el mensaje de carga exitosa del archivo
                 msg.showinfo('Lectura exitosa del archivo DICOM', '      No hay datos asociados a una imagen      ')
+def rescalado(imagen, slope, intercept):
+    '''Escalado de la imagen'''
+    if intercept == 0:
+        return imagen*slope
+    else:
+        msg.showerror('Rescale_intercept',  'Distinto de cero')
+        return imagen
 
 def procesamiento_bd(region_seleccionda):
     '''Realiza el procesamiento de datos en la base de datos para una región específica.
