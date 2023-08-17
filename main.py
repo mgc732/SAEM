@@ -235,6 +235,7 @@ def get_color_por_valor(valor, vmin, vmax, colormap='viridis'):
     Retorna:
     str: El código hexadecimal de color en formato '#rrggbb'.
     """
+    '''
     norm_valor = (valor - vmin) / (vmax - vmin)
     cmap = plt.get_cmap(colormap)
     rgba = cmap(norm_valor)
@@ -243,6 +244,10 @@ def get_color_por_valor(valor, vmin, vmax, colormap='viridis'):
     g = int(rgba[1] * 255)
     b = int(rgba[2] * 255)
     return f'#{r:02x}{g:02x}{b:02x}'
+    '''
+    norm_valor = (valor - vmin) / (vmax - vmin)
+    gray_value = int(norm_valor * 255)
+    return f'#{gray_value:02x}{gray_value:02x}{gray_value:02x}'
 
 def generar_ventana_matriz_regiones(filas, columnas, cabecera, imagen_recortada):
     """ Crea una ventana emergente para relacionar regiones con los voxeles de la imagen.
@@ -324,7 +329,7 @@ def generar_ventana_figura(image):
     # Mostrar la imagen recortada en la ventana de la matriz
     fig = plt.figure(figsize=(4, 4))
     ax1 = fig.add_subplot(111)
-    pos = ax1.imshow(image)
+    pos = ax1.imshow(image, cmap='gray')
     ax1.axis('off')
     ax1.set_title('Imagen DICOM recortada')
     # Agregar el colorbar a la figura
