@@ -700,10 +700,10 @@ ayuda = Menu(menu_bar, tearoff=0)
 menu_bar.add_cascade(label='Ayuda', menu=ayuda)
 ayuda.add_command(label='Acerca de', command=info_programa)
 
-root.iconbitmap('./imagenes/icon.ico')
+#root.iconbitmap('./imagenes/icon.ico')
 if getattr(sys, 'frozen', False):
     # Si se está ejecutando desde un ejecutable generado por PyInstaller
-    imagen_path = sys._MEIPASS + "./imagenes/imagen.png"
+    imagen_path = sys._MEIPASS + "./imagen.png"
 else:
     # Si se está ejecutando desde el código fuente
     imagen_path = "./imagenes/imagen.png"
