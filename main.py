@@ -518,22 +518,22 @@ def procesamiento_bd(region_seleccionda):
             plt.title('Gráfico de dispersión con línea de tendencia por género')
             plt.show()'''
             # Crear etiquetas para mostrar las proporciones
-            tk.Label(frame_region, text=f" Relación de Naa/Cre ==> {ratios['N-Acetyl/Creatine'].mean():.3f} ",
+            tk.Label(frame_region, text=f" Relación de Naa/Cre ==> Valor Ref: {ratios['N-Acetyl/Creatine'].mean():.3f} ",
                     font=f'Helvetica {letra} bold').grid(row=2, column=2, sticky='W')
-            tk.Label(frame_region, text=f" Relación de Cho/Cre ==> {ratios['Choline/Creatine'].mean():.3f} ",
+            tk.Label(frame_region, text=f" Relación de Cho/Cre ==> Valor Ref:  {ratios['Choline/Creatine'].mean():.3f} ",
                     font=f'Helvetica {letra} bold').grid(row=3, column=2, sticky='W')
-            tk.Label(frame_region, text=f" Creatine + Choline    ==> {(ratios['Creatine']+ratios['Choline']).mean():.1f} ",
+            tk.Label(frame_region, text=f" Creatine + Choline    ==> Valor Ref:  {(ratios['Creatine']+ratios['Choline']).mean():.1f} ",
                     font=f'Helvetica {letra} bold').grid(row=4, column=2, sticky='W')
-            tk.Label(frame_region, text=f" Relación de Cho/Naa ==> {ratios['Choline/N-Acetyl'].mean():.3f} ",
+            tk.Label(frame_region, text=f" Relación de Cho/Naa ==> Valor Ref:  {ratios['Choline/N-Acetyl'].mean():.3f} ",
                     font=f'Helvetica {letra} bold').grid(row=5, column=2, sticky='W')
-            tk.Label(frame_region, text=f" Relación de Naa/Cho ==> {ratios['N-Acetyl/Choline'].mean():.3f} ",
+            tk.Label(frame_region, text=f" Relación de Naa/Cho ==> Valor Ref:  {ratios['N-Acetyl/Choline'].mean():.3f} ",
                     font=f'Helvetica {letra} bold').grid(row=6, column=2, sticky='W')
-            tk.Label(frame_region, text=f" Relación de Cre/Naa  ==> {ratios['Creatine/N-Acetyl'].mean():.3f} ",
+            tk.Label(frame_region, text=f" Relación de Cre/Naa  ==> Valor Ref:  {ratios['Creatine/N-Acetyl'].mean():.3f} ",
                     font=f'Helvetica {letra} bold').grid(row=7, column=2, sticky='W')
             
         else:
             # Si el DataFrame está vacío, mostrar un mensaje de advertencia
-            msg.showwarning("Advertencia", "No hay elementos para guardar.")
+            msg.showwarning("Advertencia", "No hay elementos para procesar.")
 
 def generar_ventana_de_procesamiento():
     '''Crea y muestra una nueva ventana para el procesamiento de datos.
